@@ -458,4 +458,123 @@ export const SCHEMES: GovernmentScheme[] = [
     confidence: 'reference',
     tags: ['pmmsy', 'matsya sampada', 'fisheries', 'fish farming', 'aquaculture', 'fish vendor', 'blue revolution'],
   },
+  {
+    id: 'udyogini',
+    name: 'Udyogini Scheme',
+    shortName: 'Udyogini',
+    description:
+      'Karnataka State Women\'s Development Corporation (KSWDC) scheme helping women set up an income-generating activity through a bank loan carrying a government subsidy, plus EDP training.',
+    ministry: 'Government of Karnataka (Karnataka State Women\'s Development Corporation — KSWDC)',
+    scope: 'state',
+    state: 'Karnataka',
+    eligibility: {
+      states: ['Karnataka'],
+      genders: ['female'],
+      minAge: 18,
+      maxAge: 55,
+      businessSectors: ['any'],
+      notes:
+        'KSWDC\'s own scheme page (primary source, verified) states: "Age limit 18 to 55 Years", "Permanent resident of Karnataka", and an annual family income limit of "below Rs.1.50 lakhs" for General/Special category applicants and "below Rs.2.00 lakhs" for SC/ST category applicants. This income ceiling is deliberately NOT encoded as a single maxAnnualIncome figure here — it genuinely differs by category and this engine has no category-conditional income field — so check your own category\'s ceiling against your income before applying. Secondary sources disagreeing on whether an income ceiling applies at all, or citing a flat ₹2,00,000 for everyone, are not supported by KSWDC\'s own page, which clearly states two different category-specific ceilings.',
+    },
+    loanAmount: {
+      minRupees: 100_000,
+      maxRupees: 300_000,
+      notes:
+        'KSWDC: "can avail a loan from Rs.1.00 Lakhs to Rs.3.00 Lakhs from banks". The ₹90,000 (General/Special) and ₹1,50,000 (SC/ST) figures sometimes quoted as maximum subsidy caps are this app\'s own arithmetic — 30%/50% of the ₹3,00,000 maximum loan — not a separate rupee cap KSWDC\'s page itself states; KSWDC states only the percentage and the loan range.',
+    },
+    subsidy: {
+      description:
+        'KSWDC: "subsidy of 30% is provided to General and Special category women and Subsidy of 50% is provided to SC / ST category women" (percentage of the bank loan, not independently capped in rupees on KSWDC\'s page).',
+      ratePercentMin: 30,
+      ratePercentMax: 50,
+      applicantTiers: {
+        higherRatePercent: 50,
+        higherRateFor: { socialCategories: ['sc', 'st'] },
+        higherRateLabel: 'SC/ST category women',
+        standardRatePercent: 30,
+        standardRateLabel: 'General/Special category women',
+        rateOf: 'bank loan amount',
+      },
+    },
+    documents: [
+      'Aadhaar card',
+      'Residential certificate / Voter ID / Ration Card',
+      'Project report for the proposed activity',
+      'Aadhaar-seeded bank account (mandatory)',
+      'Income and caste certificate from the Tahsildar',
+    ],
+    applicationSteps: [
+      'Download the application form from kswdc.karnataka.gov.in, or collect it from the Deputy Director / Child Development Project Officer (CDPO) office in your district.',
+      'Complete the form and attach the required documents.',
+      'Submit it to the nearest participating bank branch or Karnataka State Finance Corporation (KSFC) office.',
+      'On sanction, complete the 3–6 day EDP training before the loan is released.',
+    ],
+    officialApplicationUrl: 'https://kswdc.karnataka.gov.in/21/udyogini/en',
+    officialInfoUrl: 'https://kswdc.karnataka.gov.in/21/udyogini/en',
+    source: 'Karnataka State Women\'s Development Corporation (KSWDC) — official Udyogini scheme page',
+    sourceUrl: 'https://kswdc.karnataka.gov.in/21/udyogini/en',
+    lastVerifiedDate: '2026-10-18',
+    confidence: 'reference',
+    tags: ['udyogini', 'karnataka', 'women entrepreneur', 'kswdc', 'self employment', 'collateral free loan'],
+  },
+  {
+    id: 'needs-tn',
+    name: 'New Entrepreneur-cum-Enterprise Development Scheme (NEEDS)',
+    shortName: 'NEEDS',
+    description:
+      'Tamil Nadu term-loan and capital-subsidy scheme to help educated first-generation entrepreneurs set up a new manufacturing or service enterprise, financed through TIIC, SIDBI, TAICO or commercial banks and administered by the Tamil Nadu MSME Department under G.O.Ms.No.49, MSME (D2) Department, dated 29.10.2012.',
+    ministry: 'Government of Tamil Nadu, MSME Department (financed through TIIC / SIDBI / TAICO / commercial banks)',
+    scope: 'state',
+    state: 'Tamil Nadu',
+    eligibility: {
+      states: ['Tamil Nadu'],
+      minAge: 21,
+      maxAge: 45,
+      businessSectors: ['any'],
+      businessStages: ['idea', 'new'],
+      minEducationNote: 'Degree / Diploma / ITI / Vocational Training from a recognized institution (Tamil Nadu MSME Dept eligibility PDF).',
+      notes:
+        'PRIMARY-SOURCE CONFLICT, flagged rather than silently resolved: ' +
+        'the Tamil Nadu MSME Department\'s own portal (msmeonline.tn.gov.in/needs, "Check your Eligibility" and FAQ PDFs, both citing G.O.Ms.No.49 dated 29.10.2012 — the scheme-owning department) states the age limit as "21 to 35 years maximum" for General category and up to "45 years" for Special category (Women, Transgender, BC, MBC, SC/ST, Minority, Ex-servicemen, Physically Challenged). TIIC\'s own scheme page (tiic.org/need-scheme/, one of the financing banks, not the scheme owner) instead states "21-45 years under General category and 21-55 years under special category". This app encodes the wider of the two Special-category caps (45, from the MSME Department) as the hard age gate so a Special-category applicant eligible under the authoritative government source is never wrongly told they don\'t match. General category age limit is 35; the wider 45 limit shown here applies only to Special categories (SC/ST/BC/MBC/Minority/Women/Ex-servicemen/Transgender/Differently-abled). A General-category applicant should use the stricter 21–35 cap to self-check, since the General-category ceiling under the MSME Department\'s own page is lower than the 45 used here. ' +
+        'NOT hard-gated by this app\'s eligibility engine (disclosed here only, following the same precedent as PM Vishwakarma\'s prior-loan exclusion): (1) the applicant must be a genuine FIRST-GENERATION entrepreneur proposing their first-ever, brand-new project — the MSME Dept FAQ states plainly "No, only new unit being promoted by new First Generation Entrepreneur is eligible for assistance" and "Business enterprises are ineligible under this scheme"; (2) minimum project cost — the MSME Department\'s own eligibility PDF states a project cost range of "Rs.5 lakhs to Rs.1 crore" (capped at ₹1 crore for subsidy computation if the actual cost is higher), which conflicts with TIIC\'s page, which states "Minimum Project Cost: Rs.10.00 lakhs, Maximum project cost: Rs.500.00 lakhs" — a second unresolved primary-source conflict on the minimum/maximum themselves. Citizens must confirm their own project cost against the official NEEDS guidelines before relying on either figure. ' +
+        'Also note: TIIC states "resident of Tamil Nadu State for not less than 3 years" (not separately modelled — this app only checks current state, not duration of residence) and the MSME Dept FAQ states there is "no family income ceiling" for NEEDS.',
+    },
+    loanAmount: {
+      minRupees: 500_000,
+      maxRupees: 10_000_000,
+      notes:
+        'Tamil Nadu MSME Department eligibility PDF (G.O.Ms.No.49): project cost "Rs.5 lakhs to Rs.1 crore" (₹1 crore cap applied for subsidy computation above that). TIIC\'s own page instead states "Rs.10.00 lakhs" minimum and "Rs.500.00 lakhs" maximum — a direct conflict with the Department\'s figures that this app could not resolve from the primary sources alone; see eligibility notes. Funded as a term loan (promoter contribution 10% general / 5% special category, debt-equity 9:1 / 19:1, repayment 9 years including a 2-year holiday — TIIC).',
+    },
+    subsidy: {
+      description:
+        'Tamil Nadu MSME Department FAQ (citing G.O.Ms.No.49): "25% of the eligible components of the project cost subject to maximum amount of Rs.25.00 lakhs" (cost of land, building and plant & machinery; building cost capped at 25% of project cost). Paid front-ended in instalments tied to loan disbursement and verified capital expenditure. TIIC\'s own scheme page does not mention any subsidy percentage or cap at all — secondary sources quoting ₹75 lakh or 25% of up to ₹500 lakh project cost are not supported by either primary source checked.',
+      ratePercentMin: 25,
+      ratePercentMax: 25,
+    },
+    interest: {
+      notes:
+        'Tamil Nadu MSME Dept FAQ: "Enterprises financed by TIIC/Banks will be charged at the rate of interest applicable to Micro & Small enterprises as per banking norms" (no fixed figure stated by the Department). TIIC\'s own page separately states "PLR + 0.25% pa" for enterprises it finances directly — sourced to TIIC specifically, not corroborated by the Department\'s own pages.',
+    },
+    documents: [
+      'Proof of educational qualification (Degree / Diploma / ITI / Vocational Training)',
+      'Proof of Tamil Nadu residency (3+ years)',
+      'Detailed project report / business plan for a new, first-ever enterprise',
+      'Aadhaar card and identity/address proof',
+      'Bank account details',
+    ],
+    applicationSteps: [
+      'Apply online through msmeonline.tn.gov.in (the Tamil Nadu MSME Department\'s NEEDS portal).',
+      'Complete the mandatory one-month Entrepreneurship Development Programme (EDP) training (exemption available if an equivalent EDP was already completed).',
+      'On eligibility clearance, tie up with a participating bank, TIIC, SIDBI or TAICO for the term loan.',
+      'Deposit your own contribution, have the bank sanction and disburse the loan, then claim the front-ended capital subsidy in instalments as capital expenditure is verified.',
+    ],
+    officialApplicationUrl: 'https://msmeonline.tn.gov.in/needs/index.php',
+    officialInfoUrl: 'https://www.tiic.org/need-scheme/',
+    source:
+      'Tamil Nadu MSME Department — official NEEDS eligibility and FAQ PDFs (msmeonline.tn.gov.in/needs, citing G.O.Ms.No.49 dated 29.10.2012), cross-checked against TIIC\'s own NEED Scheme page (tiic.org/need-scheme/)',
+    sourceUrl: 'https://msmeonline.tn.gov.in/needs/pdf/check_your_eligibility.pdf',
+    lastVerifiedDate: '2026-10-18',
+    confidence: 'reference',
+    tags: ['needs', 'tamil nadu', 'tiic', 'first generation entrepreneur', 'new enterprise', 'capital subsidy'],
+  },
 ]

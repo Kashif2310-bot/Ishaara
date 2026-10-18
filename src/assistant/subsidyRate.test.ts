@@ -5,6 +5,7 @@ import type { Gender, SchemeSubsidyInfo, SocialCategory } from './types'
 
 const PMMSY_SUBSIDY = SCHEMES.find((s) => s.id === 'pmmsy')!.subsidy!
 const PMEGP_SUBSIDY = SCHEMES.find((s) => s.id === 'pmegp')!.subsidy!
+const UDYOGINI_SUBSIDY = SCHEMES.find((s) => s.id === 'udyogini')!.subsidy!
 
 function rateFor(socialCategory?: SocialCategory, gender?: Gender) {
   return applicableSubsidyRate(PMMSY_SUBSIDY, { socialCategory, gender })
@@ -78,8 +79,20 @@ describe('applicantTiers data', () => {
     expect(PMMSY_SUBSIDY.description).toContain(`${tiers.higherRatePercent}% for SC/ST/Women`)
   })
 
-  it('is additive: no other scheme has applicant tiers', () => {
+  it('is additive: only the known applicant-tiered schemes have applicant tiers', () => {
     const withTiers = SCHEMES.filter((s) => (s.subsidy as SchemeSubsidyInfo | undefined)?.applicantTiers).map((s) => s.id)
-    expect(withTiers).toEqual(['pmmsy'])
+    expect(withTiers.sort()).toEqual(['pmmsy', 'udyogini'])
+  })
+
+  it('Udyogini’s tiers agree with its published range and description (generic engine, not PMMSY-specific)', () => {
+    const tiers = UDYOGINI_SUBSIDY.applicantTiers!
+    expect(tiers.standardRatePercent).toBe(UDYOGINI_SUBSIDY.ratePercentMin)
+    expect(tiers.higherRatePercent).toBe(UDYOGINI_SUBSIDY.ratePercentMax)
+    expect(describeApplicableSubsidy(UDYOGINI_SUBSIDY, { socialCategory: 'sc' })).toBe(
+      '50% of the bank loan amount — the SC/ST category women rate, which applies to you.',
+    )
+    expect(describeApplicableSubsidy(UDYOGINI_SUBSIDY, { socialCategory: 'general' })).toBe(
+      '30% of the bank loan amount — the General/Special category women rate, which applies to you.',
+    )
   })
 })

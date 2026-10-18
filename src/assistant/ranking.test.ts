@@ -188,3 +188,70 @@ describe('rankSchemes — PMMSY (fisheries)', () => {
     expect(pmmsy.scheme.subsidy?.ratePercentMax).toBe(60)
   })
 })
+
+describe('rankSchemes — Udyogini (Karnataka women)', () => {
+  const KARNATAKA_WOMAN: UserProfile = {
+    rawNotes: [],
+    age: 30,
+    gender: 'female',
+    state: 'Karnataka',
+    businessStage: 'new',
+    businessStatus: 'idea',
+  }
+
+  it('surfaces Udyogini near the top for a Karnataka woman profile', () => {
+    const ranked = rankSchemes(KARNATAKA_WOMAN)
+    const index = ranked.findIndex((r) => r.scheme.id === 'udyogini')
+    expect(index).toBeGreaterThanOrEqual(0)
+    expect(index).toBeLessThan(3)
+    const udyogini = ranked[index]!
+    expect(['likely_eligible', 'possibly_eligible']).toContain(udyogini.eligibility.status)
+    expect(udyogini.scheme.subsidy?.ratePercentMax).toBe(50)
+  })
+
+  it('never recommends Udyogini outside Karnataka', () => {
+    const tamilNaduWoman: UserProfile = { ...KARNATAKA_WOMAN, state: 'Tamil Nadu' }
+    const ranked = rankSchemes(tamilNaduWoman)
+    expect(ranked.some((r) => r.scheme.id === 'udyogini')).toBe(false)
+  })
+})
+
+describe('rankSchemes — NEEDS (Tamil Nadu)', () => {
+  const TAMIL_NADU_NEW_ENTREPRENEUR: UserProfile = {
+    rawNotes: [],
+    age: 28,
+    state: 'Tamil Nadu',
+    businessStage: 'new',
+    businessStatus: 'idea',
+    investmentRequired: 800_000,
+    financingRequired: 800_000,
+  }
+
+  it('surfaces NEEDS near the top for a Tamil Nadu profile with a project cost in range', () => {
+    const ranked = rankSchemes(TAMIL_NADU_NEW_ENTREPRENEUR)
+    const index = ranked.findIndex((r) => r.scheme.id === 'needs-tn')
+    expect(index).toBeGreaterThanOrEqual(0)
+    expect(index).toBeLessThan(3)
+    const needs = ranked[index]!
+    expect(['likely_eligible', 'possibly_eligible']).toContain(needs.eligibility.status)
+  })
+
+  it('discloses the first-generation-entrepreneur and minimum-project-cost conditions in notes, without hard-gating on them', () => {
+    const ranked = rankSchemes(TAMIL_NADU_NEW_ENTREPRENEUR)
+    const needs = ranked.find((r) => r.scheme.id === 'needs-tn')!
+    expect(needs.scheme.eligibility.notes).toMatch(/first generation/i)
+    expect(needs.scheme.eligibility.notes).toContain('minimum project cost')
+    expect(needs.scheme.eligibility.notes).toContain(
+      'General category age limit is 35; the wider 45 limit shown here applies only to Special categories (SC/ST/BC/MBC/Minority/Women/Ex-servicemen/Transgender/Differently-abled).',
+    )
+    // Not hard-gated: a profile that says nothing about first-generation status
+    // or exact minimum cost must not be marked a hard mismatch over it.
+    expect(needs.eligibility.status).not.toBe('likely_ineligible')
+  })
+
+  it('never recommends NEEDS outside Tamil Nadu', () => {
+    const karnatakaProfile: UserProfile = { ...TAMIL_NADU_NEW_ENTREPRENEUR, state: 'Karnataka' }
+    const ranked = rankSchemes(karnatakaProfile)
+    expect(ranked.some((r) => r.scheme.id === 'needs-tn')).toBe(false)
+  })
+})
