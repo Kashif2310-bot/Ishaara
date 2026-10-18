@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { SCHEMES } from './data/schemes'
 import { extractAndMerge } from './profileExtraction'
 import { rankSchemes } from './ranking'
 import type { SchemeRetriever } from './retrieval'
@@ -253,5 +254,120 @@ describe('rankSchemes — NEEDS (Tamil Nadu)', () => {
     const karnatakaProfile: UserProfile = { ...TAMIL_NADU_NEW_ENTREPRENEUR, state: 'Karnataka' }
     const ranked = rankSchemes(karnatakaProfile)
     expect(ranked.some((r) => r.scheme.id === 'needs-tn')).toBe(false)
+  })
+})
+
+describe('rankSchemes — KMDC Self-Employment Scheme (Karnataka minority community)', () => {
+  const KARNATAKA_PROFILE_IN_AGE_INCOME_RANGE: UserProfile = {
+    rawNotes: [],
+    age: 30,
+    state: 'Karnataka',
+    annualIncome: 400_000,
+    businessStage: 'new',
+    businessStatus: 'idea',
+  }
+
+  it('surfaces KMDC for a Karnataka profile within its age/income range', () => {
+    const ranked = rankSchemes(KARNATAKA_PROFILE_IN_AGE_INCOME_RANGE)
+    const kmdc = ranked.find((r) => r.scheme.id === 'kmdc-self-employment')!
+    expect(kmdc).toBeDefined()
+    expect(['likely_eligible', 'possibly_eligible']).toContain(kmdc.eligibility.status)
+    expect(kmdc.scheme.subsidy?.ratePercentMax).toBe(33)
+  })
+
+  it('never recommends KMDC outside Karnataka', () => {
+    const ranked = rankSchemes({ ...KARNATAKA_PROFILE_IN_AGE_INCOME_RANGE, state: 'Tamil Nadu' })
+    expect(ranked.some((r) => r.scheme.id === 'kmdc-self-employment')).toBe(false)
+  })
+
+  it('flags religious-minority status as disclosed-only, not hard-gated: the engine cannot check it', () => {
+    const ranked = rankSchemes(KARNATAKA_PROFILE_IN_AGE_INCOME_RANGE)
+    const kmdc = ranked.find((r) => r.scheme.id === 'kmdc-self-employment')!
+    expect(kmdc.scheme.eligibility.notes).toMatch(/religious.minority/i)
+    expect(kmdc.scheme.eligibility.notes).toContain('NOT HARD-GATED')
+    // A profile stating nothing about religion/minority status must not be
+    // penalized as a hard mismatch over a criterion this engine cannot check.
+    expect(kmdc.eligibility.status).not.toBe('likely_ineligible')
+  })
+
+  it('hard-gates on income: a profile above the ₹6 lakh ceiling is flagged ineligible', () => {
+    const highIncome: UserProfile = { ...KARNATAKA_PROFILE_IN_AGE_INCOME_RANGE, annualIncome: 900_000 }
+    const ranked = rankSchemes(highIncome)
+    const kmdc = ranked.find((r) => r.scheme.id === 'kmdc-self-employment')!
+    expect(kmdc.eligibility.status).toBe('likely_ineligible')
+  })
+})
+
+describe('rankSchemes — KMVSTDCL Self Employment Direct Loan Scheme (ST)', () => {
+  const KARNATAKA_ST_PROFILE: UserProfile = {
+    rawNotes: [],
+    age: 32,
+    state: 'Karnataka',
+    socialCategory: 'st',
+    businessStage: 'new',
+    businessStatus: 'idea',
+  }
+
+  it('surfaces the KMVSTDCL direct-loan scheme for a Karnataka ST profile', () => {
+    const ranked = rankSchemes(KARNATAKA_ST_PROFILE)
+    const scheme = ranked.find((r) => r.scheme.id === 'kmvstdcl-self-employment-direct-loan')!
+    expect(scheme).toBeDefined()
+    expect(['likely_eligible', 'possibly_eligible']).toContain(scheme.eligibility.status)
+    expect(scheme.scheme.loanAmount?.maxRupees).toBe(100_000)
+  })
+
+  it('flags a Karnataka General-category profile as ineligible (ST-only gate)', () => {
+    const generalProfile: UserProfile = { ...KARNATAKA_ST_PROFILE, socialCategory: 'general' }
+    const ranked = rankSchemes(generalProfile)
+    const scheme = ranked.find((r) => r.scheme.id === 'kmvstdcl-self-employment-direct-loan')!
+    expect(scheme.eligibility.status).toBe('likely_ineligible')
+  })
+
+  it('never recommends it outside Karnataka', () => {
+    const ranked = rankSchemes({ ...KARNATAKA_ST_PROFILE, state: 'Tamil Nadu' })
+    expect(ranked.some((r) => r.scheme.id === 'kmvstdcl-self-employment-direct-loan')).toBe(false)
+  })
+
+  it('does not catalogue the separate dairy-animal-purchase subsidy (out of scope)', () => {
+    expect(SCHEMES.some((s) => /buffalo|dairy.animal/i.test(s.description))).toBe(false)
+  })
+})
+
+describe('rankSchemes — KMVSTDCL Industries, Services and Business Scheme (ST women)', () => {
+  const KARNATAKA_ST_WOMAN: UserProfile = {
+    rawNotes: [],
+    age: 29,
+    gender: 'female',
+    state: 'Karnataka',
+    socialCategory: 'st',
+    businessStage: 'new',
+    businessStatus: 'idea',
+  }
+
+  it('surfaces the KMVSTDCL women\'s ISB scheme for a Karnataka ST woman', () => {
+    const ranked = rankSchemes(KARNATAKA_ST_WOMAN)
+    const scheme = ranked.find((r) => r.scheme.id === 'kmvstdcl-women-industries-services-business')!
+    expect(scheme).toBeDefined()
+    expect(['likely_eligible', 'possibly_eligible']).toContain(scheme.eligibility.status)
+    expect(scheme.scheme.subsidy?.ratePercentMax).toBe(70)
+  })
+
+  it('requires BOTH ST and woman (AND, not OR): an ST man is flagged ineligible', () => {
+    const stMan: UserProfile = { ...KARNATAKA_ST_WOMAN, gender: 'male' }
+    const ranked = rankSchemes(stMan)
+    const scheme = ranked.find((r) => r.scheme.id === 'kmvstdcl-women-industries-services-business')!
+    expect(scheme.eligibility.status).toBe('likely_ineligible')
+  })
+
+  it('requires BOTH ST and woman: a General-category woman is flagged ineligible', () => {
+    const generalWoman: UserProfile = { ...KARNATAKA_ST_WOMAN, socialCategory: 'general' }
+    const ranked = rankSchemes(generalWoman)
+    const scheme = ranked.find((r) => r.scheme.id === 'kmvstdcl-women-industries-services-business')!
+    expect(scheme.eligibility.status).toBe('likely_ineligible')
+  })
+
+  it('never recommends it outside Karnataka', () => {
+    const ranked = rankSchemes({ ...KARNATAKA_ST_WOMAN, state: 'Tamil Nadu' })
+    expect(ranked.some((r) => r.scheme.id === 'kmvstdcl-women-industries-services-business')).toBe(false)
   })
 })

@@ -577,4 +577,143 @@ export const SCHEMES: GovernmentScheme[] = [
     confidence: 'reference',
     tags: ['needs', 'tamil nadu', 'tiic', 'first generation entrepreneur', 'new enterprise', 'capital subsidy'],
   },
+  {
+    id: 'kmdc-self-employment',
+    name: 'KMDC Self-Employment Scheme',
+    shortName: 'KMDC Self-Employment',
+    description:
+      'Karnataka Minorities Development Corporation (KMDC) scheme for members of Karnataka\'s State Religious Minority Community: a bank loan plus a Corporation subsidy, via Nationalized/Scheduled banks, to start or improve a small-scale handicraft industry, service-sector activity or agro-based activity.',
+    ministry: 'Government of Karnataka, Minority Welfare, Hajj and Waqf Department (Karnataka Minorities Development Corporation Limited — KMDC)',
+    scope: 'state',
+    state: 'Karnataka',
+    eligibility: {
+      states: ['Karnataka'],
+      minAge: 18,
+      maxAge: 55,
+      maxAnnualIncome: 600_000,
+      businessSectors: ['any'],
+      notes:
+        'KMDC\'s own scheme page (primary source, verified against the raw page text) lists eligibility as: "(A) Applicants must belong to the State Religious Minority Community. (B) The applicant must be a permanent resident of the State. (E) The age limit of the applicant is between 18 to 55 years. (E) Family income from all sources should not exceed Rs.6.00 lakh. (G) No member of the applicant\'s family shall be an employee of the State/Central/ Government PSU. (H) Applicants should not have availed a loan in KMDC earlier." ' +
+        'RELIGIOUS-MINORITY STATUS IS THIS SCHEME\'S CORE ELIGIBILITY GATE, BUT IT IS NOT HARD-GATED HERE: this app\'s profile schema has no religion/minority field at all (SocialCategory is limited to sc/st/obc/general, and UserProfile has no religion field), so this engine cannot check it. A likely_eligible/possibly_eligible result from this app does NOT mean minority status has been confirmed — only that state, age and income passed. The no-government/PSU-household-member condition and the no-prior-KMDC-loan condition are, likewise, disclosed here only and not hard-gated, following the same precedent as PM Vishwakarma\'s prior-loan exclusion.',
+    },
+    loanAmount: {
+      notes:
+        'KMDC: loans and subsidy are provided "with the help of Nationalized / Scheduled banks" — the page states the subsidy rate/cap (see subsidy below) but no fixed loan amount or unit-cost ceiling, so none is modelled here.',
+    },
+    subsidy: {
+      description:
+        'KMDC: "33% of the unit cost or maximum of Rs. 1.00 Lakh will be given as a subsidy," with the remaining unit cost funded as a bank loan from a Nationalized/Scheduled bank at that bank\'s own rate (no fixed rate stated by KMDC).',
+      ratePercentMin: 33,
+      ratePercentMax: 33,
+    },
+    documents: [
+      'Online application',
+      'Two latest passport-size photographs',
+      'Caste and income certificate',
+      'Copy of Aadhaar card',
+      'Project report of the proposed industry/activity',
+    ],
+    applicationSteps: [
+      'Submit the online application through KMDC\'s portal with the required documents.',
+      'The application is reviewed by the Taluk-level Selection Panel: the local MLA (Chairman), an MLC resident in that Taluk (Vice-Chairman), the Tahsildar, the Taluk Panchayat Executive Officer, the District Lead Bank Manager, the District Joint Director of Commerce & Industry and the District Deputy Director of Women & Child Welfare (Members), with the District KMDC Manager as Member Secretary.',
+      'On selection, a Nationalized/Scheduled bank sanctions the loan; KMDC releases its subsidy against the sanctioned loan.',
+    ],
+    officialApplicationUrl: 'https://kmdc.karnataka.gov.in/29/self-employment-scheme/en',
+    officialInfoUrl: 'https://kmdc.karnataka.gov.in/29/self-employment-scheme/en',
+    source: 'Karnataka Minorities Development Corporation (KMDC) — official Self-Employment Scheme page',
+    sourceUrl: 'https://kmdc.karnataka.gov.in/29/self-employment-scheme/en',
+    lastVerifiedDate: '2026-10-19',
+    confidence: 'reference',
+    tags: ['kmdc', 'karnataka', 'religious minority', 'minority welfare', 'self employment', 'handicraft', 'agro-based'],
+  },
+  {
+    id: 'kmvstdcl-self-employment-direct-loan',
+    name: 'KMVSTDCL Self Employment Direct Loan Scheme',
+    shortName: 'KMVSTDCL Direct Loan',
+    description:
+      'Karnataka Maharshi Valmiki Scheduled Tribes Development Corporation (KMVSTDCL) scheme giving Scheduled Tribe beneficiaries ₹1,00,000 in combined subsidy and bank loan to take up Dairy Farming in a rural area, or a small urban trade such as a petty shop, readymade-garments shop, sheep/goat rearing, fishery, fruit-and-vegetable vending or tailoring.',
+    ministry: 'Government of Karnataka (Karnataka Maharshi Valmiki Scheduled Tribes Development Corporation Limited — KMVSTDCL)',
+    scope: 'state',
+    state: 'Karnataka',
+    eligibility: {
+      states: ['Karnataka'],
+      socialCategories: ['st'],
+      businessSectors: ['any'],
+      notes:
+        'KMVSTDCL\'s own Self Employment Program page (primary source, verified against the raw page text), scheme (a), "Self Employment Direct Loan Scheme (1.0 Lakh Subsidy)": half the scheme\'s target is for Scheduled Tribe beneficiaries taking up Dairy Farming in rural areas, the other half for small urban business activities (petty shop, readymade garments shop, sheep and goat rearing, fishery, fruits and vegetable shop, tailoring, etc.) — both funded through the same ₹1,00,000 (₹50,000 subsidy + ₹50,000 loan) assistance structure. ' +
+        'This is a DIFFERENT scheme from KMVSTDCL\'s separate dairy-animal-purchase subsidy (a 2025-26 Budget-Speech-announced ₹1.25 lakh subsidy specifically for buying two buffaloes/cows) — that one is deliberately NOT catalogued here, as it is a pure agricultural-input subsidy, not microenterprise capital. ' +
+        'The page states no separate age or income ceiling for this scheme beyond Scheduled Tribe status and (implicitly) Karnataka residency.',
+    },
+    loanAmount: {
+      minRupees: 100_000,
+      maxRupees: 100_000,
+      notes: 'KMVSTDCL: "financial assistance of Rs.1,00,000/- to each beneficiary... includes subsidy of Rs.50,000/- and Loan of Rs.50,000/-."',
+    },
+    subsidy: {
+      description:
+        'KMVSTDCL: a flat ₹50,000 subsidy component of the ₹1,00,000 total assistance (the remaining ₹50,000 is a bank loan). The page states this as a flat rupee split, not as a percentage of unit cost.',
+    },
+    documents: [
+      'Aadhaar card',
+      'Scheduled Tribe community/caste certificate',
+      'Proof of Karnataka residency',
+      'Project report or activity proposal (Dairy Farming or the chosen urban trade)',
+      'Bank account details',
+    ],
+    applicationSteps: [
+      'Apply at your district/taluk KMVSTDCL office (or the Corporation\'s online portal) with the required documents.',
+      'KMVSTDCL verifies Scheduled Tribe status and the proposed activity.',
+      'On approval, a bank sanctions the ₹50,000 loan portion; KMVSTDCL releases its ₹50,000 subsidy against it.',
+    ],
+    officialApplicationUrl: 'https://kmvstdcl.karnataka.gov.in/info-2/Self+Employment+Program/en',
+    officialInfoUrl: 'https://kmvstdcl.karnataka.gov.in/info-2/Self+Employment+Program/en',
+    source: 'Karnataka Maharshi Valmiki Scheduled Tribes Development Corporation (KMVSTDCL) — official Self Employment Program page',
+    sourceUrl: 'https://kmvstdcl.karnataka.gov.in/info-2/Self+Employment+Program/en',
+    lastVerifiedDate: '2026-10-19',
+    confidence: 'reference',
+    tags: ['kmvstdcl', 'karnataka', 'scheduled tribe', 'st', 'self employment', 'direct loan', 'dairy farming'],
+  },
+  {
+    id: 'kmvstdcl-women-industries-services-business',
+    name: 'KMVSTDCL Industries, Services and Business Scheme (Women)',
+    shortName: 'KMVSTDCL Women ISB',
+    description:
+      'KMVSTDCL scheme for Scheduled Tribe women to start a self-employment unit in small business, small industry or the service sector, combining a Corporation subsidy with a bank loan.',
+    ministry: 'Government of Karnataka (Karnataka Maharshi Valmiki Scheduled Tribes Development Corporation Limited — KMVSTDCL)',
+    scope: 'state',
+    state: 'Karnataka',
+    eligibility: {
+      states: ['Karnataka'],
+      socialCategories: ['st'],
+      genders: ['female'],
+      businessSectors: ['any'],
+      notes:
+        'KMVSTDCL\'s own Self Employment Program page (primary source, verified against the raw page text), scheme (b), "Industries, Services, and Business (2.0 Lakhs subsidy)": "the Scheduled Tribe women will be provided with subsidy from the Corporation and bank loan facility to start self-employment units in small business, small industry and service sectors. 70% of the unit cost or a maximum of Rs.2.00 lakhs will be subsidy and the remaining amount will be bank loan." This requires BOTH Scheduled Tribe status AND being a woman — not an either/or condition like Stand-Up India\'s SC/ST-or-woman gate. The page states no separate age or income ceiling for this scheme beyond those two conditions and (implicitly) Karnataka residency.',
+    },
+    subsidy: {
+      description:
+        'KMVSTDCL: "70% of the unit cost or a maximum of Rs.2.00 lakhs will be subsidy and the remaining amount will be bank loan" — no fixed unit-cost ceiling or loan amount is stated beyond that, so no loanAmount is modelled here (same reasoning as PMMSY, whose subsidy is also a pure percentage-of-cost with no stated loan ceiling).',
+      ratePercentMin: 70,
+      ratePercentMax: 70,
+    },
+    documents: [
+      'Aadhaar card',
+      'Scheduled Tribe community/caste certificate',
+      'Proof of Karnataka residency',
+      'Project report or business plan for the proposed unit',
+      'Bank account details',
+    ],
+    applicationSteps: [
+      'Apply at your district/taluk KMVSTDCL office (or the Corporation\'s online portal) with the required documents.',
+      'KMVSTDCL verifies Scheduled Tribe status, gender and the proposed business/industry/service unit.',
+      'On approval, a bank sanctions the loan portion; KMVSTDCL releases its subsidy (up to 70% of unit cost, capped at ₹2,00,000) against it.',
+    ],
+    officialApplicationUrl: 'https://kmvstdcl.karnataka.gov.in/info-2/Self+Employment+Program/en',
+    officialInfoUrl: 'https://kmvstdcl.karnataka.gov.in/info-2/Self+Employment+Program/en',
+    source: 'Karnataka Maharshi Valmiki Scheduled Tribes Development Corporation (KMVSTDCL) — official Self Employment Program page',
+    sourceUrl: 'https://kmvstdcl.karnataka.gov.in/info-2/Self+Employment+Program/en',
+    lastVerifiedDate: '2026-10-19',
+    confidence: 'reference',
+    tags: ['kmvstdcl', 'karnataka', 'scheduled tribe', 'st', 'women entrepreneur', 'self employment'],
+  },
 ]
