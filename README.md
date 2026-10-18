@@ -221,8 +221,8 @@ The setup below is what the team has run all week, on Windows. macOS and Linux h
 ### Frontend
 
 ```bash
-git clone https://github.com/Kashif2310-bot/sih2026-local.git
-cd sih2026-local
+git clone https://github.com/Kashif2310-bot/Ishaara.git
+cd Ishaara
 npm install
 npm run dev
 ```
