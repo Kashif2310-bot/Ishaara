@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 /**
  * LokPulse AdaptiveSanction
  * --------------------------
- * Production sketch for SIH26091 sanction + DBT escrow.
+ * Production sketch for the sanction + DBT escrow flow.
  * Quorum size is set from off-chain LokScore at attestation time:
  *   score >= 80 → quorum 2
  *   score >= 60 → quorum 3

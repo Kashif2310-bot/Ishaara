@@ -31,7 +31,7 @@ export function LandingPage() {
               animate={{ opacity: 1, y: 0 }}
               className="mb-4 text-xs font-semibold uppercase tracking-[0.28em] text-white/55 sm:text-sm"
             >
-              MoSJE · SIH26091 · NSFDC
+              MoSJE · NSFDC
             </motion.p>
             <motion.h1
               initial={{ opacity: 0, y: 16 }}

@@ -1,3 +1,5 @@
+> **Historical planning document — superseded by [`docs/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md). Not verified against the current codebase.**
+
 # MASTER SPEC v2 — LokPulse (SIH26091), targeting the actual Cursor build
 
 **This supersedes the earlier draft I wrote for a different repo.** That draft assumed the FastAPI/Postgres/Python-ML stack described in Jordan's and Prerna's handoffs (`services/advisory-llm`, ESS scoring, etc.). You've clarified that's a *separate* build — the one you want completed is **LokPulse**, a Vite/React/TypeScript client-side app at `C:\Users\Kashif\OneDrive\Desktop\sih2026`. Everything below is written against that codebase, from the handoff you gave me. I have not inspected the repo directly — where I say "verify," that's a real instruction to Cursor, not filler.

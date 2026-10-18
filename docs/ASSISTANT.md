@@ -34,7 +34,7 @@ Every assistant reply shows what happened to live retrieval that turn (`src/comp
 
 ## Curated scheme catalog
 
-`src/assistant/data/schemes.ts` holds 9 hand-curated central and state schemes:
+`src/assistant/data/schemes.ts` holds 14 hand-curated central and state schemes:
 - NSFDC Micro Finance Scheme
 - NSFDC Term Loan Scheme
 - PMEGP
@@ -42,8 +42,13 @@ Every assistant reply shows what happened to live retrieval that turn (`src/comp
 - Stand-Up India
 - PM Vishwakarma
 - NBCFDC Term Loan Scheme
-- Kudumbashree Microenterprise Support
+- Kudumbashree Microenterprise Support (Kerala)
 - PMMSY
+- Udyogini (Karnataka)
+- NEEDS (Tamil Nadu)
+- KMDC Self-Employment Scheme (Karnataka)
+- KMVSTDCL Self Employment Direct Loan Scheme (Karnataka)
+- KMVSTDCL Industries, Services and Business Scheme for Women (Karnataka)
 
 Each entry carries its official source URL and a `lastVerifiedDate`, and is marked `confidence: 'reference'`, meaning it must be re-verified against the official source before being relied on.
 

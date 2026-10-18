@@ -69,7 +69,7 @@ const sourceSite: SchemeSource = {
   confidence: 0.7,
   status: 'prototype_indicative',
   notesEn:
-    'URL is the official NSFDC domain. Loan numeric terms in this fixture are taken from the SIH26091 problem statement constants already locked in src/lib/config.ts — not scraped live.',
+    'URL is the official NSFDC domain. Loan numeric terms in this fixture are taken from the original problem-statement constants already locked in src/lib/config.ts — not scraped live.',
 }
 
 const sourceConfig: SchemeSource = {
@@ -77,7 +77,7 @@ const sourceConfig: SchemeSource = {
   sourceType: 'prototype_fixture',
   titleEn: 'LokPulse NSFDC constants (src/lib/config.ts)',
   url: null,
-  publisher: 'LokPulse SIH26091',
+  publisher: 'LokPulse',
   publishedAt: RETRIEVED_AT,
   retrievedAt: RETRIEVED_AT,
   confidence: 1,
@@ -277,10 +277,10 @@ function buildSchemes(): SchemeRecord[] {
 }
 
 const HONESTY_EN =
-  'Registry v0 fixture: only NSFDC Micro Finance and Term Loan. Numeric terms from SIH26091 / src/lib/config.ts. Document lists are indicative (prototype_indicative), not from a specific circular. No live scraping. No other schemes claimed.'
+  'Registry v0 fixture: only NSFDC Micro Finance and Term Loan. Numeric terms from src/lib/config.ts. Document lists are indicative (prototype_indicative), not from a specific circular. No live scraping. No other schemes claimed.'
 
 const HONESTY_KN =
-  'ರಿಜಿಸ್ಟ್ರಿ v0: ಕೇವಲ NSFDC ಮೈಕ್ರೋ ಮತ್ತು ಟರ್ಮ್ ಲೋನ್. ಸಂಖ್ಯೆಗಳು SIH26091 / config.ts ನಿಂದ. ದಾಖಲೆ ಪಟ್ಟಿ ಸೂಚಕ ಮಾತ್ರ.'
+  'ರಿಜಿಸ್ಟ್ರಿ v0: ಕೇವಲ NSFDC ಮೈಕ್ರೋ ಮತ್ತು ಟರ್ಮ್ ಲೋನ್. ಸಂಖ್ಯೆಗಳು config.ts ನಿಂದ. ದಾಖಲೆ ಪಟ್ಟಿ ಸೂಚಕ ಮಾತ್ರ.'
 
 function toSummary(s: SchemeRecord): SchemeSummary {
   return {

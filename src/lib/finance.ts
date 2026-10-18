@@ -1,5 +1,5 @@
 /**
- * NSFDC Micro Finance & Term Loan — SIH26091.
+ * NSFDC Micro Finance & Term Loan.
  * All internal money math is integer **paise** (1 rupee = 100 paise).
  * Display converts paise → rupees only at the edge.
  *

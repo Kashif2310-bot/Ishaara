@@ -1,4 +1,4 @@
-# Honesty Ledger — LokPulse / Ishaara (SIH 2026)
+# Honesty Ledger — LokPulse / Ishaara
 
 Every row here is traceable to a file, a test, or an observed result from this repository — not a claim about intent. Where I could not personally verify something tonight, it says **unverified**, not "should work." Compiled during the overnight run of 2026-09-25; see `docs/handoffs/overnight-2026-09-25.md` for the session that produced most of the citations below.
 

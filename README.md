@@ -8,8 +8,6 @@
 
 A hyperlocal opportunity scan, exact NSFDC loan structuring, and a voice advisor that finds the right government scheme and fills in the application, for rural micro-entrepreneurs.
 
-**ASYNC'26 · Open Track · team Trust The Process**
-
 ![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white)
 ![Vite 8](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
@@ -24,7 +22,7 @@ A hyperlocal opportunity scan, exact NSFDC loan structuring, and a voice advisor
 
 </div>
 
-Originally **LokPulse**, built for SIH 2026 (problem statement SIH26091 · Ministry of Social Justice & Empowerment · NSFDC schemes); the codebase and API still use that name.
+Originally **LokPulse** (Ministry of Social Justice & Empowerment · NSFDC schemes); the codebase and API still use that name.
 **Interface:** English + Kannada · **Voice:** English and Kannada on the Ishaara voice assistant; English, Kannada and Hindi on the classic assistant.
 
 > **Maturity: hackathon prototype.** Parts of this app are real and tested end to end; other parts are built but not connected, or run only in the browser. [Reliability & Known Limitations](#5-reliability--known-limitations) lists which is which. [`docs/HONESTY_LEDGER.md`](docs/HONESTY_LEDGER.md) is the source of truth for every claim.
@@ -46,11 +44,11 @@ With the app running ([Setup](#3-installation--configuration)), open `http://loc
 3. **Ask about that scan.** In the scan's URL, replace `pulse` with `assistant` (`/assistant/<case-id>`). The classic assistant opens with that case's schemes already ranked.
 4. **Find work.** Open `/jobs` for direct hiring without a middleman's cut, with a map of openings. It runs on clearly labelled sample listings.
 
-### Before and during ASYNC'26
+### Project history
 
-ASYNC'26 began on **22 September 2026**. The dates below are commit dates from this repository's history.
+This repository's history splits at **22 September 2026**. The dates below are commit dates from this repository's history.
 
-**Before ASYNC'26** — LokPulse, built for SIH 2026 (SIH26091). All of this was already in the codebase before the hackathon began:
+**Before 22 September 2026** — LokPulse. All of this was already in the codebase before this phase of work began:
 - The hyperlocal scan → Pulse → Finance → Sanction flow: LokScore computation, the NSFDC finance/EMI engine and live geo lookups (Nominatim/Overpass/Open-Meteo).
 - An early text-only scheme assistant with rule-based profile extraction (12 Sep).
 - The first Gemini Live voice foundation (16 Sep).
@@ -58,7 +56,7 @@ ASYNC'26 began on **22 September 2026**. The dates below are commit dates from t
 - The first Supabase schema (17 Sep).
 - The FastAPI persistence and login backend for the scan flow (20 Sep).
 
-**During ASYNC'26 (22 Sep onward)** — this repo, Open Track, team Trust The Process. We took that existing foundation and made it real, tested and correct:
+**From 22 September 2026 onward** — this repo. We took that existing foundation and made it real, tested and correct:
 - **Voice:**
   - Deployed the voice token-minting function and proved its tokens are fresh and single-use.
   - Moved the assistant to native audio.
@@ -72,12 +70,9 @@ ASYNC'26 began on **22 September 2026**. The dates below are commit dates from t
 - **Maps and the jobs map (1 Oct):** optional Google Maps location picking and Google Places competition analysis, falling back automatically to the keyless OpenStreetMap flow when no key is set; and a map of job openings on `/jobs`.
 - **Tests:** about 500 new tests, roughly 760 → 1,259 declared tests (about 1.66×).
 
-*Note:* this repository's commit history also includes contributions from the wider original LokPulse/SIH team, who are not part of the ASYNC'26 team roster below:
-- Prerana Prakash — the FastAPI persistence/auth layer for the scan flow
-- vamshikrishna21vk — the Supabase schema
-- Aadita — the `/apply/hub` workflow
+*Note:* this repository's commit history also includes contributions from the wider original LokPulse team, acknowledged under [Contributors](#contributors) below.
 
-This section describes team roles for this hackathon's submission specifically, not full repository authorship.
+This section describes team roles for this project specifically, not full repository authorship.
 
 ### Problem statement
 
@@ -99,7 +94,7 @@ Rural enterprise failure is rarely just "no loan". More often it is **the wrong 
 | **Adaptive sanction quorum** (`/sanction`) | LokScore ≥ 80 → 2-of-3 signers; ≥ 60 → 3-of-5; below 60 → 4-of-5 plus a mentor. Every signature is real secp256k1 ECDSA (`ethers`) | Real cryptography; stored in the browser only |
 | **Report export** (`/export`) | One printable report (browser print → PDF) combining every screen plus a document checklist | Live |
 | **Ishaara voice assistant** (`/assistant`, served from `/voice-assistant/`) | A full-screen voice advisor with an animated, AI-generated avatar. As the citizen talks or types, it ranks matching schemes and fills in the application form for the best match. It has its own Gemini Live session code and reuses the same scheme and eligibility engine. The **Assistant** link in the navigation opens it | Live, still being refined. Voice in English and Kannada (Hindi is on the classic assistant). Live connection verified end to end on 2026-10-01 with `scripts/voice-assistant-live-probe.mjs` |
-| **Classic assistant** (`/assistant-classic`, and `/assistant/:id` for a scan case) | Chat-style text or voice. Plain-language description → deterministic profile extraction → deterministic eligibility ranking across 9 curated schemes → explanation. Every AI reply is validated against the evidence before it is shown (`src/assistant/ai/responseGuard.ts`). Opened for a scan case, it ranks that case's schemes on load | Live, runs in the browser |
+| **Classic assistant** (`/assistant-classic`, and `/assistant/:id` for a scan case) | Chat-style text or voice. Plain-language description → deterministic profile extraction → deterministic eligibility ranking across 14 curated schemes → explanation. Every AI reply is validated against the evidence before it is shown (`src/assistant/ai/responseGuard.ts`). Opened for a scan case, it ranks that case's schemes on load | Live, runs in the browser |
 | **Voice on the classic assistant** | Gemini Live native audio in English, Kannada or Hindi; the browser only ever holds a short-lived token minted by a Supabase Edge Function | Live; real-microphone use checked by hand, not by automated tests (see limitations) |
 | **Jobs** (`/jobs`) | Employment matching between entrepreneurs who are hiring and workers looking for work, with a map of openings (OpenStreetMap, no key needed), showing each wage with and without a middleman's cut | **Sample/demo listings only.** When a worker sends their name and number, the page says "Saved on this device only — not yet connected to a real employer inbox" |
 | **Guided application** (`/apply`) | Profile → scheme → documents → review → consent → submission, synced to Supabase under the citizen's own anonymous identity with row-level security | Live |
@@ -115,7 +110,9 @@ Rural enterprise failure is rarely just "no loan". More often it is **the wrong 
 | Term Loan Scheme | project cost ≤ ₹50,00,000 · loan cap ₹45,00,000 · 8% p.a. · 7 years · 6-month moratorium |
 | Maximum margin money | ₹5,00,000 (larger amounts are rejected with a message, not silently clamped) |
 
-**Schemes in the assistant's catalog** (`src/assistant/data/schemes.ts`, each with an official source URL and a last-verified date): NSFDC Micro Finance Scheme, NSFDC Term Loan Scheme, PMEGP, PM Mudra Yojana, Stand-Up India, PM Vishwakarma, NBCFDC Term Loan Scheme, Kudumbashree Microenterprise Support (Kerala), PMMSY (fisheries).
+**Schemes in the assistant's catalog** (`src/assistant/data/schemes.ts`, each with an official source URL and a last-verified date): 14 schemes in total — NSFDC Micro Finance Scheme, NSFDC Term Loan Scheme, PMEGP, PM Mudra Yojana, Stand-Up India, PM Vishwakarma, NBCFDC Term Loan Scheme, Kudumbashree Microenterprise Support (Kerala), PMMSY (fisheries), Udyogini (Karnataka), NEEDS (Tamil Nadu), KMDC Self-Employment Scheme (Karnataka), KMVSTDCL Self Employment Direct Loan Scheme (Karnataka), KMVSTDCL Industries, Services and Business Scheme for Women (Karnataka).
+
+**Southern-India depth:** six of the 14 are state-specific, across three southern states — four in Karnataka (Udyogini, KMDC's Self-Employment Scheme, and KMVSTDCL's two Scheduled Tribe schemes), one in Tamil Nadu (NEEDS) and one in Kerala (Kudumbashree) — each verified against that state corporation's own official page, not a secondary aggregator.
 
 ### Screenshots
 
@@ -402,7 +399,7 @@ Sourced from [`docs/HONESTY_LEDGER.md`](docs/HONESTY_LEDGER.md) and [`docs/hando
 
 **Data and scheme knowledge**
 - **data.gov.in live retrieval is not configured.** The Edge Function is deployed but returns `503 not_configured`, because no API key or dataset has been set. Every assistant reply is labelled as coming from the curated local dataset.
-- **Scheme catalog:** 9 hand-curated schemes, not live government data. Each should be re-verified against its official source before relying on it. PMFME was considered and deliberately not added, because its approved period ends in September 2026.
+- **Scheme catalog:** 14 hand-curated schemes, not live government data. Each should be re-verified against its official source before relying on it. PMFME was considered and deliberately not added, because its approved period ends in September 2026.
 - **Mandi prices are synthesized.** Values are generated from a seeded hash for the 5 curated villages (`src/lib/mandi.ts`), not taken from a live market feed. Places geocoded live get no mandi signal at all.
 - **Festival demand comes from seeded templates** dated relative to today (`src/data/festivals.ts`), not a real event calendar.
 - **Ranking order can look counterintuitive while key facts are still unknown.** This is in the shared ranking engine, so it affects both assistants.
@@ -449,16 +446,26 @@ Sourced from [`docs/HONESTY_LEDGER.md`](docs/HONESTY_LEDGER.md) and [`docs/hando
 
 ## 6. Governance & License
 
-### Team — Trust The Process (ASYNC'26)
+### Core team
 
-| Member | Role in this submission |
+Lead developers on this project.
+
+| Member | Role |
 |---|---|
 | **Jordan Varghese** | AI voice assistant integration (Gemini Live), backend reliability engineering (scan caching, rate-limiting, failure handling), scheme data verification and sourcing, Supabase backend integration, testing discipline (full local gate before every commit) across the codebase |
-| **Kashif** (Md Mujtaba Kashif) | Original voice assistant foundation and early scheme assistant; built the Ishaara voice assistant (`/assistant`) and the Jobs (`/jobs`) employment-matching feature during ASYNC'26 week |
+| **Kashif** (Md Mujtaba Kashif) | Original voice assistant foundation and early scheme assistant; built the Ishaara voice assistant (`/assistant`) and the Jobs (`/jobs`) employment-matching feature |
+
+### Contributors
+
+Supporting contributions, including from the wider original LokPulse team (see [Project history](#project-history)).
+
+| Member | Role |
+|---|---|
 | **Praneel** | Google Maps location picking and competition analysis (`src/maps/`) |
 | **Harshvardhan** | Jobs (`/jobs`) map feature and listing improvements |
-
-Contributors from the original LokPulse/SIH team are acknowledged under [Before and during ASYNC'26](#before-and-during-async26).
+| **Prerana Prakash** | The FastAPI persistence/auth layer for the scan flow |
+| **vamshikrishna21vk** | The Supabase schema |
+| **Aadita** | The `/apply/hub` workflow |
 
 ### License
 
@@ -472,7 +479,9 @@ Released under the [MIT License](LICENSE).
 - Never commit `.env.local` or any key. Browser-bundled variables (`VITE_*`) must never hold a secret.
 - Before claiming a capability in a demo, docs or a pitch, find its row in [`docs/HONESTY_LEDGER.md`](docs/HONESTY_LEDGER.md) and use its wording. Every new scheme figure must cite an official source.
 
-**Further documentation:** [`docs/ASSISTANT.md`](docs/ASSISTANT.md), [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md), [`docs/PRESENTATION_NOTES.md`](docs/PRESENTATION_NOTES.md), [`docs/MASTER_SPEC.md`](docs/MASTER_SPEC.md), [`docs/HONESTY_LEDGER.md`](docs/HONESTY_LEDGER.md), [`docs/handoffs/team-audit-2026-09-26.md`](docs/handoffs/team-audit-2026-09-26.md).
+**Technical Design Document:** [`docs/TECHNICAL_DESIGN.md`](docs/TECHNICAL_DESIGN.md) — architecture, the two citizen flows, persistence paths, external services, and the assistant's pipeline and trust model, consolidated in one place.
+
+**Further documentation:** [`docs/ASSISTANT.md`](docs/ASSISTANT.md) (assistant deep-dive), [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md), [`docs/PRESENTATION_NOTES.md`](docs/PRESENTATION_NOTES.md), [`docs/MASTER_SPEC.md`](docs/MASTER_SPEC.md) (historical, superseded), [`docs/HONESTY_LEDGER.md`](docs/HONESTY_LEDGER.md), [`docs/handoffs/team-audit-2026-09-26.md`](docs/handoffs/team-audit-2026-09-26.md).
 
 ---
 
@@ -480,6 +489,7 @@ Released under the [MIT License](LICENSE).
 
 Newest first. Add one dated line per revision instead of rewriting this file.
 
+- **2026-10-19** — Scheme catalog expanded with a Southern-India focus: Udyogini and NEEDS (verified against KSWDC's and the Tamil Nadu MSME Department's own primary sources), then KMDC and KMVSTDCL's two schemes (verified against KMDC's and KMVSTDCL's own primary sources) — 9 → 14 schemes. Removed all hackathon/event branding from this README and `docs/` (real scheme, ministry and corporation names were kept). Restructured the team section into Core team (Jordan Varghese, Kashif) and Contributors (Praneel, Harshvardhan, Prerana Prakash, vamshikrishna21vk, Aadita). Added [`docs/TECHNICAL_DESIGN.md`](docs/TECHNICAL_DESIGN.md), consolidating the architecture section and `docs/ASSISTANT.md`; `docs/MASTER_SPEC.md` is now marked historical.
 - **2026-10-01** — Final submission pass, covering today's work:
   - the Ishaara voice assistant integration (`/assistant`);
   - the Jobs page and its map;

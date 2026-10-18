@@ -15,8 +15,8 @@ The presentation lock commit message is:
 ## Teammate workflow
 
 ```
-git clone https://github.com/Kashif2310-bot/sih2026.git
-cd sih2026
+git clone https://github.com/Kashif2310-bot/sih2026-local.git
+cd sih2026-local
 git checkout integration/final-lokpulse
 npm install
 npm run demo:lan
