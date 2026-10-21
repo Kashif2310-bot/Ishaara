@@ -123,6 +123,8 @@ function ev(date: string, name: string, kind: CalendarEntry['kind'], source: str
 
 /** Fixed-date and announced local events, 2026–2027. */
 export const KALABURAGI_FIXED: CalendarEntry[] = [
+  ev('2026-10-23', 'North-East Teachers’ Constituency poll, 8 am–4 pm', 'local', 'Election Commission (PTI); Regional Commissioner, Kalaburagi division (Suddione)', false, 'Holiday only for registered teacher voters; prohibitory orders around polling centres.'),
+  ev('2026-10-27', 'Teachers’ Constituency vote count at Gulbarga University', 'local', 'Regional Commissioner, Kalaburagi division (Suddione)', false, 'Prohibitory orders around the counting centre (Bhaskara Bhavan).'),
   ev('2026-11-10', 'Balipadyami (Karnataka holiday)', 'state', 'Government of Karnataka holidays 2026 [KA26]', true),
   ev('2026-11-27', 'Kanakadasa Jayanthi (Karnataka holiday)', 'state', 'Government of Karnataka holidays 2026 [KA26]', false),
   ev('2026-12-23', 'Datta Jayanti at Ganagapur (Dattatreya temple)', 'local', 'Margashirsha Purnima 2026 [DATTA]', true, 'Big pilgrim day at Ganagapur, Afzalpur taluk. Date from a festival calendar site; check with the temple.'),
