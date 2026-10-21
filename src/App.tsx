@@ -52,6 +52,7 @@ const AdminAuditPage = lazy(() =>
   import('./admin/pages/AdminAuditPage').then((m) => ({ default: m.AdminAuditPage })),
 )
 const JobsPage = lazy(() => import('./pages/JobsPage').then((m) => ({ default: m.JobsPage })))
+const BriefPage = lazy(() => import('./pages/BriefPage').then((m) => ({ default: m.BriefPage })))
 
 const ApplyVoicePage = lazy(() =>
   import('./pages/apply/VoicePage').then((m) => ({ default: m.VoicePage })),
@@ -178,6 +179,7 @@ export default function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/history" element={<HistoryPage />} />
               <Route path="/scan" element={<ScanPage />} />
+              <Route path="/brief" element={<BriefPage />} />
               <Route path="/pulse" element={<LegacyAssessmentRedirect page="pulse" />} />
               <Route
                 path="/pulse/:id"

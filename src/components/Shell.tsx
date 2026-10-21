@@ -28,6 +28,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
     { to: '/home', label: t('nav.home'), apply: false },
     { to: applyHref, label: t('nav.apply'), apply: true },
     { to: '/scan', label: t('nav.scan'), apply: false },
+    { to: '/brief', label: t('nav.brief'), apply: false },
     { to: '/history', label: t('nav.history'), apply: false },
     { to: withCase('pulse'), label: t('nav.pulse'), apply: false },
     { to: withCase('report'), label: t('nav.report'), apply: false },

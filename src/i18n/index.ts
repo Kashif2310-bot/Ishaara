@@ -47,6 +47,7 @@ export const translationResources = {
         logout: 'Log out',
         apply: 'Apply',
         admin: 'Admin',
+        brief: 'Brief',
       },
       auth: {
         title: 'Demo login',
@@ -965,6 +966,7 @@ export const translationResources = {
         logout: 'ಲಾಗ್ ಔಟ್',
         apply: 'ಅರ್ಜಿ ಸಲ್ಲಿಸಿ',
         admin: 'ಅಡ್ಮಿನ್',
+        brief: 'ದೈನಂದಿನ ವರದಿ',
       },
       auth: {
         title: 'ಡೆಮೋ ಲಾಗಿನ್',
