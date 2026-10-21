@@ -15,19 +15,8 @@ import {
 import { DIMENSION_LABELS } from '../../brief/metrics'
 import { SOURCE_INFO } from '../../brief/sources'
 import { WEEKDAYS, weekday } from '../../brief/calendar'
-import type { Brief, CalendarEvent, Dimension, DriverValue, Metric, Tactic, Verdict } from '../../brief/types'
-
-export const VERDICT_TEXT: Record<Verdict, { word: string; producer: string; blurb: string }> = {
-  push: { word: 'Push', producer: 'Good day', blurb: 'Busier than an ordinary day. Prepare more.' },
-  normal: { word: 'Normal', producer: 'Ordinary day', blurb: 'An ordinary day. Run your usual plan.' },
-  protect: { word: 'Protect', producer: 'Protect', blurb: 'Slower or riskier than usual. Hold back and protect stock.' },
-}
-
-export function longDate(iso: string): string {
-  return new Intl.DateTimeFormat('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' }).format(
-    new Date(`${iso}T12:00:00+05:30`),
-  )
-}
+import { longDate, VERDICT_TEXT } from './briefFormat'
+import type { Brief, CalendarEvent, Dimension, DriverValue, Metric, Tactic } from '../../brief/types'
 
 function ago(ms: number): string {
   const m = Math.round((Date.now() - ms) / 60000)
@@ -394,8 +383,4 @@ export function SourceList({ brief }: { brief: Brief }) {
       })}
     </ul>
   )
-}
-
-export function weekdayName(n: number): string {
-  return WEEKDAYS[n]
 }

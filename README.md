@@ -89,6 +89,7 @@ Rural enterprise failure is rarely just "no loan". More often it is **the wrong 
 |---|---|---|
 | **Hyperlocal scan** (`/scan`) | Profile + location → live weather (Open-Meteo), live geocoding (Nominatim) and live competitor density (Overpass, or Google Places when a Maps key is set) for any Indian place; seeded mandi and festival signals for 5 curated Karnataka villages | Live APIs; seeded data where noted |
 | **Competition analysis** (optional, Google Maps; `src/maps/`) | With `VITE_GOOGLE_MAPS_API_KEY` set: map-based location picking and Google Places competitor data on `/apply` and live-place scans. Without a key: falls back automatically to the original OpenStreetMap flow — the village dropdown, "Other / not listed", and Overpass lookups — with no functionality lost | Optional; needs your own Maps key (not provided). The keyless fallback was verified against the pre-Maps code on 2026-10-01 |
+| **Daily business brief** (`/brief`; `src/brief/`) | Any business, any place in India → a call for tomorrow (push / normal / protect), ranked actions, a 7-day outlook and a ledger of about 180 measurements, each with its unit, source and method. Reads tomorrow's hourly forecast, 10 years of local climate, air quality, river flow, elevation, the OpenStreetMap features around the spot, and the 2026–2027 Government of India holiday lists plus computed Islamic dates (including the Urs of Khwaja Bande Nawaz near Kalaburagi). Failed sources are shown as unavailable, never filled in. Farm and livestock notes defer product and dose choices to the KVK or vet | Live, runs in the browser, no keys. English only. Tested on synthetic fixtures; the live services were not reachable from the build machine, so the first real run should be checked by hand |
 | **LokScore** | 0–100 score: demand 25%, competition gap 20%, weather fit 15%, financial coverage 25%, eligibility 15% (`src/lib/config.ts`) | Live, local computation |
 | **NSFDC finance engine** | Exact scheme rules (table below), reducing-balance quarterly annuity EMI in integer paise | Live, locked by `src/lib/finance.test.ts` |
 | **Adaptive sanction quorum** (`/sanction`) | LokScore ≥ 80 → 2-of-3 signers; ≥ 60 → 3-of-5; below 60 → 4-of-5 plus a mentor. Every signature is real secp256k1 ECDSA (`ethers`) | Real cryptography; stored in the browser only |
@@ -194,9 +195,9 @@ The assistant's internals — pipeline, AI providers, live retrieval and its tru
 
 | Service | Used for | State |
 |---|---|---|
-| Open-Meteo | Weather on `/scan` | Live, no key |
+| Open-Meteo | Weather on `/scan`; forecast, soil, ERA5 climate archive, CAMS air quality, GloFAS river flow and elevation on `/brief` | Live, no key |
 | Nominatim (OpenStreetMap) | Place search / geocoding | Live, no key; rate-limited to 1 request/second |
-| Overpass (OpenStreetMap) | Nearby competitor density | Live, no key |
+| Overpass (OpenStreetMap) | Nearby competitor density; footfall anchors and competitors on `/brief` (two public mirrors, raced) | Live, no key |
 | Google Maps JavaScript + Places | Map location picking and competitor data on `/apply` and live-place scans | Optional; only with your own `VITE_GOOGLE_MAPS_API_KEY`. Without it, the Overpass and village-list paths are used |
 | OpenStreetMap tiles | The jobs map on `/jobs` | Live, no key |
 | Gemini Live | Voice assistant | Live; needs `GEMINI_API_KEY` as a Supabase secret |
@@ -489,6 +490,7 @@ Released under the [MIT License](LICENSE).
 
 Newest first. Add one dated line per revision instead of rewriting this file.
 
+- **2026-10-22** — Added the daily business brief (`/brief`, `src/brief/`): live public data → about 180 metrics → a transparent push / normal / protect call for tomorrow, a 7-day outlook, and actions that cite the metrics they rest on. Holiday dates are copied from the DoPT 2026 and 2027 orders; Islamic dates are computed and labelled as such.
 - **2026-10-19** — Scheme catalog expanded with a Southern-India focus: Udyogini and NEEDS (verified against KSWDC's and the Tamil Nadu MSME Department's own primary sources), then KMDC and KMVSTDCL's two schemes (verified against KMDC's and KMVSTDCL's own primary sources) — 9 → 14 schemes. Removed all hackathon/event branding from this README and `docs/` (real scheme, ministry and corporation names were kept). Restructured the team section into Core team (Jordan Varghese, Kashif) and Contributors (Praneel, Harshvardhan, Prerana Prakash, vamshikrishna21vk, Aadita). Added [`docs/TECHNICAL_DESIGN.md`](docs/TECHNICAL_DESIGN.md), consolidating the architecture section and `docs/ASSISTANT.md`; `docs/MASTER_SPEC.md` is now marked historical.
 - **2026-10-01** — Final submission pass, covering today's work:
   - the Ishaara voice assistant integration (`/assistant`);

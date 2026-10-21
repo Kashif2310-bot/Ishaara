@@ -13,8 +13,8 @@ import {
   SourceList,
   TacticList,
   VerdictCard,
-  weekdayName,
 } from '../components/brief/BriefParts'
+import { weekdayName } from '../components/brief/briefFormat'
 
 const EXAMPLES: Array<{ business: string; place: string; label: string }> = [
   { business: 'Lassi and buttermilk stall', place: 'Kalaburagi', label: 'Lassi stall · Kalaburagi' },
