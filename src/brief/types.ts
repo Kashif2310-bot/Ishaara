@@ -200,7 +200,11 @@ export interface Brief {
   headline: string
   /** 0..100: how much of the evidence was actually available, and how far ahead the forecast is. */
   confidence: number | null
-  competitors: Array<{ name: string; distanceM: number; kind: string }>
+  competitors: Array<{ name: string; distanceM: number; kind: string; lat: number; lng: number }>
+  /** Tomorrow hour by hour (empty when the forecast did not load). */
+  hourly: Array<{ hour: number; t: number | null; feels: number | null; prob: number | null; precip: number | null; uv: number | null; wind: number | null }>
+  /** The news pulse is a saved snapshot (live collector unavailable): when it was captured. */
+  pulseSnapshotAt: string | null
   /** The Kalaburagi news pulse behind this brief, or null if it could not be loaded. */
   pulse: PulseReport | null
   generatedAt: number

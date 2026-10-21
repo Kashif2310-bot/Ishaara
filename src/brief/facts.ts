@@ -93,6 +93,8 @@ export interface DayFacts {
   eveningTemp: number | null
   eveningComfortHours: number | null
   afterSunsetTradingHours: number | null
+  /** The hourly rows behind the day's figures, for the hour-by-hour chart. */
+  hours: HourRow[]
 }
 
 export interface ClimateNormal {
@@ -137,6 +139,8 @@ export interface CompetitorFact {
   name: string
   kind: string
   distanceM: number
+  lat: number
+  lng: number
 }
 
 export interface OsmFacts {
@@ -362,6 +366,7 @@ export function dayFacts(fc: ForecastResponse, date: string, byDate: Map<string,
       ? countIf(rows, (r) => r.hour >= 17 && r.hour <= 22 && r.feels != null && r.feels >= 18 && r.feels <= 32 && (r.prob ?? 0) < 40)
       : null,
     afterSunsetTradingHours: sunsetHour != null ? clamp(TRADING_HOURS.to + 1 - sunsetHour, 0, 24) : null,
+    hours: rows,
   }
 }
 
@@ -512,7 +517,7 @@ export function buildFacts(place: Place | null, today: string, raw: Partial<RawS
     osm = {
       counts: raw.osm.data.counts,
       competitors: raw.osm.data.competitors
-        .map((c) => ({ name: c.name, kind: c.kind, distanceM: Math.round(distanceKm(place.lat, place.lng, c.lat, c.lng) * 1000) }))
+        .map((c) => ({ name: c.name, kind: c.kind, lat: c.lat, lng: c.lng, distanceM: Math.round(distanceKm(place.lat, place.lng, c.lat, c.lng) * 1000) }))
         .sort((a, b) => a.distanceM - b.distanceM),
     }
   }

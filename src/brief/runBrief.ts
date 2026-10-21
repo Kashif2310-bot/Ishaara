@@ -24,6 +24,7 @@ import { inKalaburagiDistrict } from './kalaburagi'
 import { analyzePulse } from './pulse/analyze'
 import { loadPulseFromSupabase, type PulseLoader } from './pulse/load'
 import type { PulseReport } from './pulse/types'
+import { SNAPSHOT_CAPTURED_AT, snapshotItems } from './pulse/snapshot'
 import type { Brief, BriefInput, Metric, Place, SourceId, SourceResult, SourceStatus } from './types'
 
 export interface RunOptions {
@@ -33,6 +34,10 @@ export interface RunOptions {
   place?: Place
   now?: number
   onProgress?: (step: string) => void
+  /** Called as each live source answers, for the loading view. */
+  onSource?: (id: SourceId, ok: boolean) => void
+  /** Show the saved news snapshot when the live pulse is unavailable (on by default). */
+  pulseSnapshotFallback?: boolean
   /** Where the Kalaburagi news pulse comes from (Supabase by default; injected in tests). */
   pulseLoader?: PulseLoader
 }
@@ -79,6 +84,8 @@ export async function runBrief(input: BriefInput, opts: RunOptions = {}): Promis
     coverage: { live: sources.filter((s) => s.ok).length, total: 9 },
     headline: error,
     pulse: null,
+    hourly: [],
+    pulseSnapshotAt: null,
     confidence: null,
     competitors: [],
     generatedAt: now,
@@ -97,6 +104,7 @@ export async function runBrief(input: BriefInput, opts: RunOptions = {}): Promis
     place = g.data
     geoStatus = status('geocode', g)
   }
+  opts.onSource?.('geocode', true)
   // The brief is built for Kalaburagi district only: its calendar, news channels and places.
   if (!inKalaburagiDistrict(place)) {
     return empty(
@@ -108,15 +116,20 @@ export async function runBrief(input: BriefInput, opts: RunOptions = {}): Promis
   opts.onProgress?.('Reading weather, climate, air, rivers, the map and the local news')
   const { lat, lng } = place
   const loadPulse = opts.pulseLoader ?? loadPulseFromSupabase
+  const tap = <T,>(id: SourceId, p: Promise<SourceResult<T>>) =>
+    p.then((r) => {
+      opts.onSource?.(id, r.ok)
+      return r
+    })
   const [forecast, soil, climate, air, river, elevation, osm, pulseRes] = await Promise.all([
-    fetchForecast(lat, lng, so),
+    tap('forecast', fetchForecast(lat, lng, so)),
     fetchSoil(lat, lng, so),
-    fetchClimate(lat, lng, today, so),
-    fetchAir(lat, lng, so),
-    fetchRiver(lat, lng, so),
-    fetchElevation(lat, lng, so),
-    fetchOsm(lat, lng, osmSpecs(archetype.competitorFilters), archetype.competitorFilters, 2000, so),
-    loadPulse(new Date(now)),
+    tap('climate', fetchClimate(lat, lng, today, so)),
+    tap('air', fetchAir(lat, lng, so)),
+    tap('river', fetchRiver(lat, lng, so)),
+    tap('elevation', fetchElevation(lat, lng, so)),
+    tap('osm', fetchOsm(lat, lng, osmSpecs(archetype.competitorFilters), archetype.competitorFilters, 2000, so)),
+    tap('pulse', loadPulse(new Date(now))),
   ])
   const raw: RawSources = { forecast, soil, climate, air, river, elevation, osm }
 
@@ -137,7 +150,7 @@ export async function runBrief(input: BriefInput, opts: RunOptions = {}): Promis
 
   opts.onProgress?.('Scoring tomorrow')
   const facts = buildFacts(place, today, raw)
-  const pulse: PulseReport | null = pulseRes.ok
+  let pulse: PulseReport | null = pulseRes.ok
     ? analyzePulse(pulseRes.data.items, {
         now: new Date(now),
         today,
@@ -145,6 +158,13 @@ export async function runBrief(input: BriefInput, opts: RunOptions = {}): Promis
         sources: pulseRes.data.runs.map((r) => ({ source: r.source, ok: r.ok, items: r.items, message: r.message, finishedAt: r.finished_at })),
       })
     : null
+  // When the live collector is unavailable, fall back to the saved snapshot of the same channels,
+  // analysed as of its capture time and labelled with it everywhere it shows.
+  let pulseSnapshotAt: string | null = null
+  if (!pulse && opts.pulseSnapshotFallback !== false) {
+    pulseSnapshotAt = SNAPSHOT_CAPTURED_AT
+    pulse = analyzePulse(snapshotItems(), { now: new Date(SNAPSHOT_CAPTURED_AT), today, freshAt: new Date(SNAPSHOT_CAPTURED_AT).toISOString(), sources: [] })
+  }
   facts.pulse = pulse
   const metrics: Metric[] = buildLedger({ facts, place, archetype, marketDay: input.marketDay, sources, now })
 
@@ -222,7 +242,9 @@ export async function runBrief(input: BriefInput, opts: RunOptions = {}): Promis
     coverage: { live, total: sources.length },
     headline: forecast.ok ? headline(verdict, scored.drivers, severe, archetype) : 'The weather forecast did not load, so there is no call on tomorrow. Try again in a minute.',
     confidence,
-    competitors: (facts.osm?.competitors ?? []).slice(0, 12).map((c) => ({ name: c.name, distanceM: c.distanceM, kind: c.kind })),
+    competitors: (facts.osm?.competitors ?? []).slice(0, 30).map((c) => ({ name: c.name, distanceM: c.distanceM, kind: c.kind, lat: c.lat, lng: c.lng })),
+    hourly: (T?.hours ?? []).map((h) => ({ hour: h.hour, t: h.t, feels: h.feels, prob: h.prob, precip: h.precip, uv: h.uv, wind: h.wind })),
+    pulseSnapshotAt,
     pulse,
     generatedAt: now,
   }

@@ -253,10 +253,19 @@ describe('the pulse inside the brief', () => {
 
   it('says the pulse is unavailable, and leaves its driver out, when it cannot load', async () => {
     const down: PulseLoader = async () => ({ ok: false, failure: 'not_configured', message: 'The pulse database is not connected in this build.' })
-    const b = await runBrief({ business: 'tea stall', place: 'Kalaburagi', today }, { fetchImpl: world(), place: KALABURAGI, useCache: false, now: Date.parse(`${today}T20:00:00+05:30`), pulseLoader: down })
+    const b = await runBrief({ business: 'tea stall', place: 'Kalaburagi', today }, { fetchImpl: world(), place: KALABURAGI, useCache: false, now: Date.parse(`${today}T20:00:00+05:30`), pulseLoader: down, pulseSnapshotFallback: false })
     expect(b.drivers.find((x) => x.id === 'local_events')?.signal).toBeNull()
     expect(b.metrics.find((m) => m.id === 'pulse.posts')?.display).toBe('Unavailable')
     expect(b.sources.find((s) => s.id === 'pulse')).toMatchObject({ ok: false, failure: 'not_configured' })
     expect(b.tactics.some((t) => t.id.startsWith('pulse.'))).toBe(false)
+  })
+
+  it('falls back to the labelled real snapshot when the live pulse is down', async () => {
+    const down: PulseLoader = async () => ({ ok: false, failure: 'unreachable', message: 'Could not reach the pulse database.' })
+    const b = await runBrief({ business: 'saree shop', place: 'Kalaburagi', today }, { fetchImpl: world(), place: KALABURAGI, useCache: false, now: Date.parse(`${today}T20:00:00+05:30`), pulseLoader: down })
+    expect(b.pulseSnapshotAt).toBe(SNAPSHOT_CAPTURED_AT)
+    expect(b.sources.find((s) => s.id === 'pulse')?.ok).toBe(false)
+    expect(b.pulse?.notices.length).toBeGreaterThan(0)
+    expect(b.metrics.find((m) => m.id === 'pulse.promos')!.value).toBeGreaterThan(0)
   })
 })
