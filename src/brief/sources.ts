@@ -14,6 +14,7 @@
  *     result says so (cached: true) instead of passing as fresh.
  */
 import { geocodeLocationDetailed } from '../lib/geo'
+import { districtQuery } from './kalaburagi'
 import { readScanCache, writeScanCache } from '../lib/scanCache'
 import type { FailureKind, Place, SourceInfo, SourceResult } from './types'
 
@@ -61,10 +62,16 @@ export const SOURCE_INFO: SourceInfo[] = [
     note: 'Counts of mapped schools, worship places, stations, markets, competitors and more around the spot.',
   },
   {
+    id: 'pulse',
+    name: 'Kalaburagi news channels (YouTube feeds; Instagram via Apify when set up)',
+    url: 'https://www.youtube.com/@gohash22',
+    note: 'Posts from Gulbarga Ki Awaaz, gohash, Gulbarga News, Gulbarga Headlines, Gulbarga 24 News and Kalaburagi 24/7, collected on a schedule.',
+  },
+  {
     id: 'calendar',
-    name: 'DoPT holiday orders 2026 and 2027, and the Islamic (Umm al-Qura) calendar',
+    name: 'DoPT 2026–2027 holidays, Karnataka holidays, Kalaburagi events and the Islamic calendar',
     url: 'https://www.gconnect.in/news/holidays-to-be-observed-in-central-government-offices-during-the-year-2026.html',
-    note: 'Gazetted and restricted holidays from the Government of India orders; Islamic dates computed in the browser.',
+    note: 'Government holiday orders; Kalaburagi jatra, Urs and festival dates with sources; Islamic dates computed for India.',
   },
 ]
 
@@ -146,10 +153,10 @@ export interface SourceOpts {
 export async function resolvePlace(query: string): Promise<SourceResult<Place>> {
   const q = query.trim()
   if (!q) return { ok: false, failure: 'no_match', message: 'Type a village, town or district.' }
-  const res = await geocodeLocationDetailed(q.toLowerCase().includes('india') ? q : `${q}, India`)
+  const res = await geocodeLocationDetailed(districtQuery(q))
   if (!res.hit) {
     const messages: Record<string, string> = {
-      no_match: `No place called "${q}" was found in India. Add the district or state and try again.`,
+      no_match: `No place called "${q}" was found in Kalaburagi district. Try the town, village or area name, for example "Aland" or "Jagat Circle".`,
       rate_limited: 'The place-search service is limiting requests right now. Wait a minute and try again.',
       timed_out: 'The place-search service did not answer in time. Try again.',
       unreachable: 'Could not reach the place-search service. Check the connection and try again.',

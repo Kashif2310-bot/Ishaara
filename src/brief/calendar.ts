@@ -10,9 +10,9 @@
  *   - Urs of Khwaja Bande Nawaz, Kalaburagi (Gulbarga): 15, 16 and 17 Dhu al-Qadah.
  *     https://en.wikipedia.org/wiki/Bande_Nawaz
  *
- * Islamic dates are computed in the browser from the Umm al-Qura calendar (Intl API). In India
- * the actual date follows the local moon sighting and is often one day later, so every computed
- * Islamic date carries that caveat. Dates outside the two DoPT lists are not invented: the brief
+ * Islamic dates are computed in the browser from the Umm al-Qura calendar (Intl API) and shifted
+ * to India's observed dates (see hijri()). The real date follows the local moon sighting, so
+ * every computed Islamic date carries that caveat. Dates outside the two DoPT lists are not invented: the brief
  * says the calendar is not covered for them.
  */
 import type { CalendarEvent } from './types'
@@ -135,9 +135,6 @@ const STATE_HOLIDAYS: Array<{ state: string; month: number; day: number; name: s
   { state: 'karnataka', month: 11, day: 1, name: 'Kannada Rajyotsava', retail: true },
 ]
 
-/** Kalaburagi (Gulbarga) city centre, for the Urs of Khwaja Bande Nawaz. */
-export const KALABURAGI = { lat: 17.3297, lng: 76.8343, radiusKm: 15 }
-
 // ---------------------------------------------------------------- date helpers (YYYY-MM-DD, no time zone drift)
 
 export function toUtcDate(iso: string): Date {
@@ -208,7 +205,24 @@ function formatter(): Intl.DateTimeFormat | null {
   return hijriFormatter
 }
 
+/**
+ * Islamic date as observed in India (Kalaburagi follows the Deccan / Hyderabad moon sighting).
+ *
+ * Computed as the Umm al-Qura date of the previous day, because India's observed dates have run
+ * one day behind Umm al-Qura on every date we could check:
+ *   - Id-ul-Fitr 2027: DoPT 10 Mar; Umm al-Qura 1 Shawwal = 9 Mar
+ *   - Id-ul-Zuha 2027: DoPT 17 May; Umm al-Qura 10 Dhu al-Hijjah = 16 May
+ *   - Muharram (Ashura) 2027: DoPT 16 Jun; Umm al-Qura 10 Muharram = 15 Jun
+ *   - Milad-un-Nabi 2027: DoPT 15 Aug; Umm al-Qura 12 Rabi' al-Awwal = 14 Aug
+ *   - 622nd Urs of Bande Nawaz: held 3–5 May 2026 (17 Dhu al-Qadah = 5 May); Umm al-Qura 17 = 4 May
+ * The real date still depends on the local moon sighting, so every Islamic event keeps that note.
+ */
 export function hijri(iso: string): HijriDate | null {
+  return hijriUmmAlQura(addDays(iso, -1))
+}
+
+/** The Saudi Umm al-Qura calendar date, as computed by the browser. */
+export function hijriUmmAlQura(iso: string): HijriDate | null {
   const f = formatter()
   if (!f) return null
   const parts = f.formatToParts(toUtcDate(iso))
@@ -246,6 +260,7 @@ export function findHijri(from: string, horizon: number, test: (h: HijriDate) =>
   return null
 }
 
+/** 15–17 Dhu al-Qadah, the Urs of Khwaja Bande Nawaz in Kalaburagi. */
 export function isUrsDay(h: HijriDate | null): boolean {
   return h != null && h.month === 11 && h.day >= 15 && h.day <= 17
 }
@@ -261,7 +276,10 @@ export function distanceKm(lat1: number, lng1: number, lat2: number, lng2: numbe
 
 // ---------------------------------------------------------------- events for a window
 
-/** All calendar events between `from` and `to` (inclusive) for this place. */
+/**
+ * National and state holidays between `from` and `to` (inclusive) for this place. Kalaburagi's
+ * own events (the Urs, the jatra, Islamic observances) come from kalaburagi.ts.
+ */
 export function eventsBetween(
   from: string,
   to: string,
@@ -277,29 +295,6 @@ export function eventsBetween(
       if (state.includes(s.state) && s.month === m && s.day === day) {
         out.push(e(d, s.name, 'state', `${s.state[0].toUpperCase()}${s.state.slice(1)} state holiday`, s.retail))
       }
-    }
-    const h = hijri(d)
-    if (!h) continue
-    if (h.month === 9 && h.day === 1) {
-      out.push(e(d, 'Ramadan begins (computed)', 'islamic_computed', 'Umm al-Qura calendar', false, `${MOON} Often one day later in India.`))
-    }
-    if (h.month === 9 && h.day === 27) {
-      out.push(e(d, 'Shab-e-Qadr (computed, 27 Ramadan)', 'islamic_computed', 'Umm al-Qura calendar', false, `${MOON} Often one day later in India.`))
-    }
-    const nearKalaburagi =
-      place != null && distanceKm(place.lat, place.lng, KALABURAGI.lat, KALABURAGI.lng) <= KALABURAGI.radiusKm
-    if (nearKalaburagi && isUrsDay(h)) {
-      out.push(
-        e(
-          d,
-          `Urs of Khwaja Bande Nawaz, day ${h.day - 14} of 3 (computed)`,
-          'islamic_computed',
-          'Wikipedia: Bande Nawaz (Urs on 15 to 17 Dhu al-Qadah); date from the Umm al-Qura calendar',
-          // Scored by the religious-gathering driver, not as a buying festival, so it is not counted twice.
-          false,
-          `${MOON} Thousands gather at the dargah from different religions. Confirm the date with the dargah committee.`,
-        ),
-      )
     }
   }
   return out.sort((a, b) => a.date.localeCompare(b.date))

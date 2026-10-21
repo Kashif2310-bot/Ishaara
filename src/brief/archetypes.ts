@@ -119,6 +119,9 @@ const W = (w: Partial<Weights>): Weights => ({
   climate_anomaly: 0,
   field_conditions: 0,
   market_day: 0,
+  // Events the city's news channels announce for that day (gatherings up, bandhs and closures
+  // down). Most shops and stalls feel them; producers barely do.
+  local_events: 0.5,
   ...w,
 })
 
@@ -303,7 +306,7 @@ export const ARCHETYPES: Archetype[] = [
     id: 'transport',
     label: 'Auto, taxi or goods transport',
     keywords: ['auto', 'autorickshaw', 'rickshaw', 'taxi', 'cab', 'tempo', 'transport', 'delivery', 'goods vehicle', 'driver', 'ಆಟೋ'],
-    weights: W({ heat: 0.1, rain: 0.1, outdoor_comfort: 0.1, festival: 0.8, weekend_holiday: 0.4, payday: 0.3, religious_gathering: 1, market_day: 0.8 }),
+    weights: W({ heat: 0.1, rain: 0.1, outdoor_comfort: 0.1, festival: 0.8, weekend_holiday: 0.4, payday: 0.3, religious_gathering: 1, market_day: 0.8, local_events: 0.8 }),
     competitorFilters: ['["amenity"="taxi"]'],
     competitorLabel: 'taxi and auto stands',
     anchors: { busStations: 1, rail: 1, markets: 0.8, hospitals: 0.7, mainRoads: 0.6 },
@@ -313,7 +316,7 @@ export const ARCHETYPES: Archetype[] = [
     id: 'dairy',
     label: 'Dairy animals and milk',
     keywords: ['dairy', 'milk', 'cow', 'cows', 'buffalo', 'buffaloes', 'cattle', 'ಹಾಲು', 'ಹಸು', 'ghee', 'paneer', 'curd'],
-    weights: W({ heat: -0.7, rain: -0.2, outdoor_comfort: 0.4, festival: 0.4, payday: 0.2, climate_anomaly: -0.4 }),
+    weights: W({ heat: -0.7, rain: -0.2, outdoor_comfort: 0.4, festival: 0.4, payday: 0.2, climate_anomaly: -0.4, local_events: 0.1 }),
     competitorFilters: ['["shop"="dairy"]'],
     competitorLabel: 'dairy shops',
     anchors: { buildings: 0.6, vets: 0.6, markets: 0.5, water: 0.4 },
@@ -323,7 +326,7 @@ export const ARCHETYPES: Archetype[] = [
     id: 'poultry',
     label: 'Poultry, goat or sheep',
     keywords: ['poultry', 'chicken', 'broiler', 'broilers', 'layer', 'layers', 'hen', 'hens', 'goat', 'goats', 'sheep', 'mutton', 'egg farm', 'ಕೋಳಿ', 'ಕುರಿ', 'ಮೇಕೆ'],
-    weights: W({ heat: -0.9, rain: -0.2, outdoor_comfort: 0.3, weekend_holiday: 0.7, payday: 0.5, religious_gathering: 0.4, climate_anomaly: -0.5 }),
+    weights: W({ heat: -0.9, rain: -0.2, outdoor_comfort: 0.3, weekend_holiday: 0.7, payday: 0.5, religious_gathering: 0.4, climate_anomaly: -0.5, local_events: 0.2 }),
     competitorFilters: ['["shop"~"^(butcher|poultry)$"]'],
     competitorLabel: 'butchers and poultry shops',
     anchors: { buildings: 0.6, vets: 0.7, markets: 0.6, mainRoads: 0.4 },
@@ -333,7 +336,7 @@ export const ARCHETYPES: Archetype[] = [
     id: 'farm_crop',
     label: 'Crop farming',
     keywords: ['farmer', 'farm', 'farming', 'crop', 'crops', 'cotton', 'tur', 'toor', 'tur dal', 'jowar', 'paddy', 'rice field', 'ragi', 'maize', 'corn', 'groundnut', 'chilli', 'onion', 'tomato farm', 'horticulture', 'agriculture', 'sugarcane farm', 'sunflower', 'bengal gram', 'chickpea', 'ರೈತ', 'ಕೃಷಿ', 'ಬೆಳೆ', 'ತೊಗರಿ', 'ಜೋಳ'],
-    weights: W({ field_conditions: 1, heat: -0.3, rain: -0.5, outdoor_comfort: 0.3, market_day: 0.5 }),
+    weights: W({ field_conditions: 1, heat: -0.3, rain: -0.5, outdoor_comfort: 0.3, market_day: 0.5, local_events: 0.1 }),
     competitorFilters: [],
     competitorLabel: '',
     anchors: { agriSupply: 1, vets: 0.3, markets: 0.8, farmland: 0.5, water: 0.6, mainRoads: 0.5 },

@@ -5,7 +5,8 @@
  * a dose or a seed variety.
  */
 import type { Archetype } from './archetypes'
-import { daysBetween, hijri, weekday, WEEKDAYS } from './calendar'
+import { addDays, daysBetween, hijri, weekday, WEEKDAYS } from './calendar'
+import { competitorPromos } from './pulse/analyze'
 import { festivalSignal, isHoliday, ursOn, type Facts } from './facts'
 import { heatIndexBand, indianAqiFromPm, moonAgeDays, naqiBand, thiBand, uvBand, wbgtBand } from './formulas'
 import type { DayOutlook, Tactic, Verdict } from './types'
@@ -363,13 +364,15 @@ export function buildTactics(facts: Facts, archetype: Archetype, verdict: Verdic
   } else if (dom >= 26 && !isProducer) {
     add({ id: 'cal.month_end', kind: 'watch', priority: 40, title: 'Month-end squeeze', detail: 'Cash is tight: smaller packs move better and credit requests rise. Decide your credit limit before opening.', basis: ['cal.month_end'] })
   }
-  if (ursOn(tm, facts.calendar.nearKalaburagi)) {
+  if (ursOn(tm)) {
     add({
       id: 'cal.urs',
       kind: 'act',
       priority: 95,
-      title: 'Urs of Khwaja Bande Nawaz: crowds expected',
-      detail: 'Thousands of pilgrims of many faiths gather at the dargah. Extend hours, carry plenty of change and UPI QR, and stock fast-moving items. The date is computed from the Islamic calendar: confirm with the dargah committee, as the moon sighting can shift it by a day.',
+      title: facts.calendar.nearKalaburagi ? 'Urs of Khwaja Bande Nawaz: crowds expected' : 'Urs of Khwaja Bande Nawaz: pilgrims on the move',
+      detail: facts.calendar.nearKalaburagi
+        ? 'Hundreds of thousands of pilgrims of every faith gather at the dargah, with special trains from Hyderabad. Extend hours, carry plenty of change and a UPI QR, and stock fast-moving items. The date is computed from the Islamic calendar: confirm with the dargah committee, as the moon sighting can shift it by a day.'
+        : 'Pilgrims travel to the Kalaburagi dargah through the district: roads, buses and highway food stops get busier. The date is computed: confirm with the dargah committee.',
       basis: ['cal.urs'],
     })
   } else if (facts.calendar.nextUrs) {
@@ -516,6 +519,103 @@ export function buildTactics(facts: Facts, archetype: Archetype, verdict: Verdic
   }
   if (facts.river?.tomorrow != null && facts.river.median && facts.river.tomorrow / facts.river.median >= 2) {
     add({ id: 'water.river_high', kind: 'watch', priority: 72, title: `River running ${(facts.river.tomorrow / facts.river.median).toFixed(1)}× typical`, detail: 'Avoid low crossings and causeways, and lift pumps and stock away from the bank.', basis: ['river.ratio'] })
+  }
+
+  // ------------------------------------------------------------ Kalaburagi news pulse
+  const P = facts.pulse
+  if (P) {
+    const notice = P.notices[0]
+    if (notice && !isProducer) {
+      add({
+        id: 'pulse.notice',
+        kind: 'act',
+        priority: 82,
+        title: notice.title,
+        detail: `Reported by ${notice.channelName}. Plan the evening around it: last orders and cash count before the cut-off, and lights and stock packed away in time.`,
+        basis: ['pulse.notices'],
+      })
+    }
+    const onTomorrow = P.upcoming.filter((e) => e.date != null && e.date <= tm && (e.endDate ?? e.date) >= tm)
+    for (const e of onTomorrow.slice(0, 3)) {
+      const where = e.places.length ? ` at ${e.places.join(', ')}` : ''
+      if (e.kind === 'disruption') {
+        add({
+          id: `pulse.disrupt.${e.sourceKey}`,
+          kind: 'avoid',
+          priority: 90,
+          title: `Possible disruption tomorrow${where}`,
+          detail: `“${e.title}” (${e.channelName}). Keep perishable stock light, check the morning news before opening, and avoid that route if you can.`,
+          basis: ['pulse.events_tomorrow'],
+        })
+      } else if (e.kind === 'gathering' && !isProducer) {
+        add({
+          id: `pulse.gather.${e.sourceKey}`,
+          kind: 'act',
+          priority: 84,
+          title: `Crowd expected tomorrow${where}`,
+          detail: `“${e.title}” (${e.channelName}). ${isFood || tr.outdoorStall ? 'Take extra stock and set up on the route people will walk.' : 'Expect more people passing; put your best seller at the front.'}`,
+          basis: ['pulse.events_tomorrow'],
+        })
+      } else if (e.kind === 'offer') {
+        add({
+          id: `pulse.offer.${e.sourceKey}`,
+          kind: 'watch',
+          priority: 50,
+          title: 'A local offer is running tomorrow',
+          detail: `“${e.title}” (${e.channelName}). Shoppers are out for deals: a small offer of your own is easy to notice.`,
+          basis: ['pulse.events_tomorrow'],
+        })
+      }
+    }
+    const soon = P.upcoming.filter((e) => e.date != null && e.date > tm && e.date <= addDays(tm, 6) && e.kind !== 'offer').slice(0, 2)
+    for (const e of soon) {
+      add({
+        id: `pulse.soon.${e.sourceKey}`,
+        kind: 'watch',
+        priority: 52,
+        title: `Coming up on ${e.date}: ${e.kind === 'disruption' ? 'possible disruption' : 'local event'}`,
+        detail: `“${e.title}” (${e.channelName}).`,
+        basis: ['pulse.events'],
+      })
+    }
+    const rivals = competitorPromos(P, archetype.id)
+    if (rivals.length && !isProducer) {
+      const r = rivals[0]
+      add({
+        id: 'pulse.rivals',
+        kind: 'watch',
+        priority: 60,
+        title: `${rivals.length} similar business${rivals.length === 1 ? ' is' : 'es are'} advertising on local channels`,
+        detail: `Most recent: “${r.title.slice(0, 100)}”${r.views != null ? ` (${r.views.toLocaleString('en-IN')} views on ${r.channelName})` : ''}. Customers will compare: have a clear price or bundle of your own ready.`,
+        basis: ['pulse.promos'],
+      })
+    }
+    // Only patterns a shop can use in its own post or paid feature (not bulletins or crime news).
+    const usable = new Set(['price_bundle', 'exhibition', 'opening', 'live_crowd', 'known_face'])
+    const best = P.patterns.find((p) => usable.has(p.pattern))
+    if (best && best.medianOutlier != null && best.medianOutlier >= 1.2 && !isProducer) {
+      const ex = best.examples[0]
+      add({
+        id: 'pulse.content',
+        kind: 'act',
+        priority: 42,
+        title: `If you post a reel this week: ${best.label.toLowerCase()}`,
+        detail: `On these channels, posts like this get about ${best.medianOutlier.toFixed(1)}× their usual views${ex ? `, for example “${ex.title.slice(0, 80)}”` : ''}. Use the same hook for your own post or a paid feature.`,
+        basis: ['pulse.best_pattern'],
+      })
+    }
+    const localItems = P.items.filter((i) => i.scope !== 'outside')
+    const thefts = localItems.filter((i) => /theft|thie(f|ves)|stolen|robbery|chain[- ]?snatch|ಕಳ್ಳತನ/i.test(i.title))
+    if (thefts.length && !isProducer) {
+      add({
+        id: 'pulse.theft',
+        kind: 'watch',
+        priority: 41,
+        title: 'Shop theft is in the local news',
+        detail: `“${thefts[0].title.slice(0, 100)}” (${thefts[0].channelName}). Keep the day’s cash banked or locked, and the CCTV or a bright light on at closing.`,
+        basis: ['pulse.topic.crime_safety'],
+      })
+    }
   }
 
   // ------------------------------------------------------------ the week

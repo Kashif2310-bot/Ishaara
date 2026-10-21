@@ -15,14 +15,16 @@ import {
   VerdictCard,
 } from '../components/brief/BriefParts'
 import { weekdayName } from '../components/brief/briefFormat'
+import { PulsePanel } from '../components/brief/PulsePanel'
+import { DISTRICT_PLACES } from '../brief/kalaburagi'
 
 const EXAMPLES: Array<{ business: string; place: string; label: string }> = [
-  { business: 'Lassi and buttermilk stall', place: 'Kalaburagi', label: 'Lassi stall · Kalaburagi' },
-  { business: 'Tea stall near the bus stand', place: 'Mysuru', label: 'Tea stall · Mysuru' },
-  { business: 'Cotton farmer, 4 acres', place: 'Raichur', label: 'Cotton farmer · Raichur' },
-  { business: 'Dairy, 6 cows', place: 'Mandya', label: 'Dairy · Mandya' },
-  { business: 'Saree shop', place: 'Belagavi', label: 'Saree shop · Belagavi' },
-  { business: 'Flower and puja items seller', place: 'Udupi', label: 'Flowers · Udupi' },
+  { business: 'Lassi and buttermilk stall', place: 'Jagat Circle, Kalaburagi', label: 'Lassi stall · Jagat Circle' },
+  { business: 'Tea stall near the bus stand', place: 'Kalaburagi', label: 'Tea stall · Kalaburagi' },
+  { business: 'Tur dal farmer, 4 acres', place: 'Aland', label: 'Tur farmer · Aland' },
+  { business: 'Dairy, 6 cows', place: 'Jevargi', label: 'Dairy · Jevargi' },
+  { business: 'Saree shop', place: 'Super Market, Kalaburagi', label: 'Saree shop · Super Market' },
+  { business: 'Flower and puja items seller', place: 'Ganagapur', label: 'Flowers · Ganagapur' },
 ]
 
 const STORE_KEY = 'ishaara.brief.lastInput.v1'
@@ -117,12 +119,13 @@ export function BriefPage() {
   return (
     <div className="mx-auto max-w-5xl">
       <header className="max-w-3xl">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-ink/50">Daily business brief</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-ink/50">Kalaburagi daily business brief</p>
         <h1 className="mt-2 font-display text-4xl font-bold leading-[1.05] text-forest sm:text-5xl">What should you do tomorrow?</h1>
         <p className="mt-4 text-base leading-relaxed text-ink/70">
-          Type a business and a place anywhere in India. The brief reads tomorrow’s weather hour by hour, ten years of local climate, air quality,
-          rivers, the map around the spot, and the festival calendar, then turns well over a hundred measurements into one call and a short list of
-          things to do. Every number links back to where it came from.
+          For any business anywhere in Kalaburagi district. The brief reads tomorrow’s weather hour by hour, ten years of local climate, air quality,
+          rivers, the map around the spot, Kalaburagi’s own calendar (the Urs at the Bande Nawaz dargah, the Sharanabasaveshwar jatra, Islamic dates
+          as observed here), and what the city’s news channels are posting. Then it turns well over a hundred measurements into one call and a short
+          list of things to do. Every number links back to where it came from.
         </p>
       </header>
 
@@ -157,12 +160,18 @@ export function BriefPage() {
               <input
                 value={form.place}
                 onChange={(e) => set({ place: e.target.value })}
-                placeholder="Village, town, area or district"
+                placeholder="Area, town or village in Kalaburagi district"
                 className="w-full rounded-xl border border-forest/15 bg-white py-2.5 pl-9 pr-3.5 text-base outline-none focus:border-forest/60"
                 autoComplete="off"
+                list="kalaburagi-places"
               />
+              <datalist id="kalaburagi-places">
+                {DISTRICT_PLACES.map((p) => (
+                  <option key={p.name} value={p.name === 'Kalaburagi city' ? 'Kalaburagi' : p.name} />
+                ))}
+              </datalist>
             </span>
-            <span className="mt-1.5 block text-xs text-ink/55">Add the district if the name is common, e.g. “Hosur, Kalaburagi”.</span>
+            <span className="mt-1.5 block text-xs text-ink/55">Kalaburagi district only for now, e.g. “Jagat Circle”, “Aland” or “Sedam”.</span>
           </label>
           <label className="block text-sm font-medium text-ink">
             Type of business <span className="font-normal text-ink/50">(optional)</span>
@@ -244,6 +253,10 @@ export function BriefPage() {
             <TacticList tactics={brief.tactics} metrics={metricMap} />
           </Section>
 
+          <Section title="Kalaburagi news pulse" kicker="What the city’s news channels are posting, and what is pulling views">
+            <PulsePanel brief={brief} />
+          </Section>
+
           <Section title="The week ahead" kicker="Same scoring, day by day. Air quality is only forecast for tomorrow.">
             <OutlookStrip brief={brief} />
           </Section>
@@ -284,11 +297,16 @@ export function BriefPage() {
                 needed them are left out, and the confidence score drops. A cached result says when it was fetched.
               </p>
               <p>
+                The news pulse reads public posts from Gulbarga Ki Awaaz, gohash, Gulbarga News, Gulbarga Headlines, Gulbarga 24 News and Kalaburagi 24/7.
+                A post is an “outlier” when its views beat that channel’s usual views for the same format; events and notices are read from the posts’
+                own words (a written date, or “tomorrow” in a post from the last two days), so open the post before acting on one.
+              </p>
+              <p>
                 Limits worth knowing: OpenStreetMap only counts what volunteers have mapped, so small towns usually have more shops and stalls than it
-                shows. Holidays come from the Government of India lists for 2026 and 2027; which festivals count as big local buying days in which state is
-                our own judgement. Islamic dates (Ramadan, the Urs at Kalaburagi) are computed and can move a day with the moon sighting. Farm and
-                livestock notes describe conditions; ask your Krishi Vigyan Kendra or vet before any spray, dose or treatment. This page is in English
-                only for now.
+                shows. Holidays come from the Government of India and Government of Karnataka lists; the Sharanabasaveshwar jatra date for 2027 is
+                inferred from past years. Islamic dates (Ramadan, Shab-e-Barat, the Urs) are computed one day after the Saudi calendar, which matched every
+                Indian date we checked, but the moon sighting can still move them a day. Farm and livestock notes describe conditions; ask your Krishi
+                Vigyan Kendra or vet before any spray, dose or treatment. This page is in English only for now.
               </p>
             </div>
           </Section>

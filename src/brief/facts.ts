@@ -6,7 +6,8 @@
  * Nothing here invents a value. A missing hour stays missing; a day with too few hours of data
  * gets null for the aggregates that need them.
  */
-import { addDays, daysBetween, eventsBetween, hijri, isUrsDay, KALABURAGI, distanceKm, findHijri, retailHere, type CalendarEntry } from './calendar'
+import { addDays, daysBetween, eventsBetween, hijri, isUrsDay, distanceKm, findHijri, retailHere, type CalendarEntry } from './calendar'
+import { KALABURAGI_CITY, kalaburagiEventsBetween, URS_CROWD_RADIUS_KM } from './kalaburagi'
 import {
   clamp,
   gdd,
@@ -19,6 +20,7 @@ import {
 } from './formulas'
 import type { AirResponse, ArchiveResponse, ForecastResponse, OsmResult, RiverResponse } from './sources'
 import type { Place, SourceResult } from './types'
+import type { PulseReport } from './pulse/types'
 
 export const TRADING_HOURS = { from: 7, to: 21 } // inclusive: 15 hours
 export const FIELD_HOURS = { from: 6, to: 18 }
@@ -146,7 +148,9 @@ export interface CalendarFacts {
   events: CalendarEntry[]
   /** Events within the next 45 days, for the "coming up" list. */
   upcoming: CalendarEntry[]
+  /** Within the city, where the Urs crowd is felt directly. */
   nearKalaburagi: boolean
+  distanceFromCityKm: number | null
   nextUrs: string | null
   /** State of the place, used to decide which regional festivals drive buying. */
   state?: string
@@ -168,6 +172,8 @@ export interface Facts {
   elevation: number | null
   osm: OsmFacts | null
   calendar: CalendarFacts
+  /** What Kalaburagi's news channels are posting; null when the pulse could not be loaded. */
+  pulse: PulseReport | null
 }
 
 // ---------------------------------------------------------------- helpers
@@ -511,16 +517,23 @@ export function buildFacts(place: Place | null, today: string, raw: Partial<RawS
     }
   }
 
-  const nearKalaburagi = place != null && distanceKm(place.lat, place.lng, KALABURAGI.lat, KALABURAGI.lng) <= KALABURAGI.radiusKm
+  const distanceFromCityKm = place ? distanceKm(place.lat, place.lng, KALABURAGI_CITY.lat, KALABURAGI_CITY.lng) : null
+  const nearKalaburagi = distanceFromCityKm != null && distanceFromCityKm <= URS_CROWD_RADIUS_KM
+  const withLocal = (from: string, to: string) =>
+    [...eventsBetween(from, to, place), ...kalaburagiEventsBetween(from, to, distanceFromCityKm ?? 999)]
+      // Regional festivals observed elsewhere (Karwa Chauth, Chhath, Onam…) are left out of Kalaburagi's list.
+      .filter((e) => !e.regions || retailHere(e, place?.state))
+      .sort((a, b) => a.date.localeCompare(b.date))
   const calendar: CalendarFacts = {
-    events: eventsBetween(addDays(today, -1), addDays(today, 15), place),
-    upcoming: eventsBetween(tomorrow, addDays(today, 45), place),
+    events: withLocal(addDays(today, -1), addDays(today, 15)),
+    upcoming: withLocal(tomorrow, addDays(today, 45)),
     nearKalaburagi,
-    nextUrs: nearKalaburagi ? findHijri(tomorrow, 400, (h) => isUrsDay(h)) : null,
+    distanceFromCityKm,
+    nextUrs: findHijri(tomorrow, 400, (h) => isUrsDay(h)),
     state: place?.state,
   }
 
-  return { today, tomorrow, todayFacts, days, allDays, past7, normals, air, soil, river, elevation, osm, calendar }
+  return { today, tomorrow, todayFacts, days, allDays, past7, normals, air, soil, river, elevation, osm, calendar, pulse: null }
 }
 
 /** Retail-festival proximity for a date: 1 on the eve, fading to 0 five days out. Festival day itself counts 0.6. */
@@ -540,6 +553,7 @@ export function isHoliday(date: string, events: CalendarEntry[]): CalendarEntry 
   return events.find((e) => e.date === date && (e.kind === 'national' || e.kind === 'state')) ?? null
 }
 
-export function ursOn(date: string, nearKalaburagi: boolean): boolean {
-  return nearKalaburagi && isUrsDay(hijri(date))
+/** Is `date` one of the three Urs days (India-observed, computed)? */
+export function ursOn(date: string): boolean {
+  return isUrsDay(hijri(date))
 }

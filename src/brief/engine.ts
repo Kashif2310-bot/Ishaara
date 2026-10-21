@@ -14,6 +14,7 @@ import { CALENDAR_COVERAGE, daysInMonth, hijri, weekday, WEEKDAYS } from './cale
 import { festivalSignal, isHoliday, ursOn, type DayFacts, type Facts } from './facts'
 import { clamp, moonAgeDays } from './formulas'
 import { anchorScore } from './metrics'
+import { ursStrength } from './kalaburagi'
 import type { DayOutlook, DriverId, DriverValue, Verdict } from './types'
 
 export const DRIVER_LABELS: Record<DriverId, string> = {
@@ -28,6 +29,7 @@ export const DRIVER_LABELS: Record<DriverId, string> = {
   climate_anomaly: 'Warmer than normal',
   field_conditions: 'Field-work conditions',
   market_day: 'Weekly market day',
+  local_events: 'Events in the local news',
 }
 
 const ORDER: DriverId[] = [
@@ -42,6 +44,7 @@ const ORDER: DriverId[] = [
   'climate_anomaly',
   'field_conditions',
   'market_day',
+  'local_events',
 ]
 
 export const TANH_SCALE = 2
@@ -115,7 +118,10 @@ export function signalsFor(facts: Facts, d: DayFacts | null, date: string, marke
 
   const counts = facts.osm?.counts
   const parts: Array<{ v: number; why: string; id: string }> = []
-  if (ursOn(date, facts.calendar.nearKalaburagi)) parts.push({ v: 1, why: 'Urs of Khwaja Bande Nawaz (computed date).', id: 'cal.urs' })
+  if (ursOn(date)) {
+    const v = ursStrength(facts.calendar.distanceFromCityKm ?? 999)
+    parts.push({ v, why: v === 1 ? 'Urs of Khwaja Bande Nawaz in the city (computed date).' : 'Urs of Khwaja Bande Nawaz: pilgrims travel through the district (computed date).', id: 'cal.urs' })
+  }
   const h = hijri(date)
   if (h?.month === 9) parts.push({ v: 0.4, why: 'Ramadan: evening iftar buying (computed date).', id: 'cal.ramadan' })
   if (wd === 5 && (counts?.mosques ?? 0) > 0) parts.push({ v: 0.3, why: `Friday prayers at ${counts?.mosques} mosque(s) within 1 km.`, id: 'osm.mosques' })
@@ -140,6 +146,21 @@ export function signalsFor(facts: Facts, d: DayFacts | null, date: string, marke
           explanation: `${d.fieldHours} of 13 daylight hours are workable${(d.rainMm ?? 0) >= 15 ? ', and heavy rain will waterlog fields' : ''}.`,
         }
       : { signal: null, basis: ['crop.field_hours'], explanation: 'Hourly forecast unavailable.' }
+
+  if (!facts.pulse) {
+    out.local_events = { signal: null, basis: ['pulse.posts'], explanation: 'The local news pulse is not available.' }
+  } else {
+    const on = facts.pulse.events.filter((e) => e.date != null && e.kind !== 'notice' && e.date <= date && (e.endDate ?? e.date) >= date)
+    const val = (k: string) => (k === 'gathering' ? 0.6 : k === 'disruption' ? -0.6 : k === 'offer' ? 0.15 : 0)
+    const sum = on.reduce((a, e) => a + val(e.kind), 0)
+    out.local_events = {
+      signal: clamp(sum, -1, 1),
+      basis: ['pulse.events', 'pulse.posts'],
+      explanation: on.length
+        ? `Announced for this day: ${on.slice(0, 3).map((e) => `${e.title} (${e.kind}, ${e.channelName})`).join('; ')}.`
+        : 'No event announced for this day in the posts collected.',
+    }
+  }
 
   out.market_day =
     marketDay != null
@@ -207,7 +228,7 @@ export function outlook(facts: Facts, archetype: Archetype, marketDay: number | 
     if (hol) tags.push(hol.name)
     const fest = festivalSignal(d.date, facts.calendar.events, facts.calendar.state)
     if (fest.event && fest.daysAway && fest.daysAway > 0) tags.push(`${fest.daysAway}d to ${fest.event.name}`)
-    if (ursOn(d.date, facts.calendar.nearKalaburagi)) tags.push('Urs')
+    if (ursOn(d.date)) tags.push('Urs')
     if (marketDay != null && marketDay === weekday(d.date)) tags.push('Market day')
     if ((d.rainProbTrading ?? 0) >= 60 || (d.rainMm ?? 0) >= 15.6) tags.push(`Rain ${Math.round(d.rainProbTrading ?? d.rainProbMax ?? 0)}%`)
     if ((d.feelsMax ?? 0) >= 38) tags.push(`Hot ${Math.round(d.feelsMax ?? 0)}°`)
@@ -238,6 +259,7 @@ const PHRASE: Record<DriverId, [string, string]> = {
   climate_anomaly: ['unusually hot weather for the season', 'cooler weather than usual'],
   field_conditions: ['good field conditions', 'poor field conditions'],
   market_day: ['market day', 'no market'],
+  local_events: ['events in the local news', 'disruptions in the local news'],
 }
 
 export function phrase(d: DriverValue): string {

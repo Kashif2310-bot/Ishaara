@@ -2,7 +2,8 @@
 // SYNTHETIC (see fixtures.test-data.ts); only the formulas are checked against published values.
 import { describe, expect, it } from 'vitest'
 import { matchArchetype } from './archetypes'
-import { addDays, eventsBetween, findHijri, HOLIDAYS, retailHere, todayInIndia } from './calendar'
+import { addDays, eventsBetween, findHijri, hijri, HOLIDAYS, retailHere, todayInIndia } from './calendar'
+import { districtQuery, inKalaburagiDistrict, kalaburagiEventsBetween, ursStrength } from './kalaburagi'
 import { buildFacts, festivalSignal } from './facts'
 import {
   heatIndexC,
@@ -21,6 +22,7 @@ import type { Place } from './types'
 
 const KALABURAGI: Place = { query: 'Kalaburagi', displayName: 'Kalaburagi, Karnataka, India', lat: 17.3297, lng: 76.8343, district: 'Kalaburagi', state: 'Karnataka', cached: false }
 const MYSURU: Place = { query: 'Mysuru', displayName: 'Mysuru, Karnataka, India', lat: 12.2958, lng: 76.6394, district: 'Mysuru', state: 'Karnataka', cached: false }
+const ALAND: Place = { query: 'Aland', displayName: 'Aland, Kalaburagi, Karnataka, India', lat: 17.5642, lng: 76.5688, district: 'Kalaburagi', state: 'Karnataka', cached: false }
 
 function world(today: string, w: Partial<F.SyntheticWeather> = {}, extra: Partial<F.Router> = {}) {
   const start = addDays(today, -7)
@@ -85,18 +87,34 @@ describe('calendar', () => {
     expect(find('2027-10-29', 'Diwali')).toBe(true)
     expect(find('2027-09-04', 'Ganesh Chaturthi')).toBe(true)
   })
-  it('computes 1 Shawwal 1448 within a day of the DoPT Id-ul-Fitr date (10 Mar 2027)', () => {
-    const d = findHijri('2027-03-01', 20, (h) => h.month === 10 && h.day === 1)
-    expect(d).not.toBeNull()
-    expect(['2027-03-09', '2027-03-10', '2027-03-11']).toContain(d)
+  it('finds 1 Shawwal 1448 on the DoPT Id-ul-Fitr date (10 Mar 2027)', () => {
+    expect(findHijri('2027-03-01', 20, (h) => h.month === 10 && h.day === 1)).toBe('2027-03-10')
   })
-  it('adds the Urs of Khwaja Bande Nawaz only near Kalaburagi', () => {
-    const start = findHijri('2027-03-01', 120, (h) => h.month === 11 && h.day === 15)!
-    const near = eventsBetween(start, addDays(start, 2), KALABURAGI).filter((e) => e.name.startsWith('Urs'))
-    const far = eventsBetween(start, addDays(start, 2), MYSURU).filter((e) => e.name.startsWith('Urs'))
-    expect(near).toHaveLength(3)
-    expect(near[0].note).toMatch(/moon sighting/)
-    expect(far).toHaveLength(0)
+  it('puts Islamic dates on India’s observed calendar (one day after Umm al-Qura)', () => {
+    // DoPT 2027: Id-ul-Fitr 10 Mar, Id-ul-Zuha 17 May, Muharram (Ashura) 16 Jun, Milad-un-Nabi 15 Aug.
+    expect(hijri('2027-03-10')).toMatchObject({ month: 10, day: 1 })
+    expect(hijri('2027-05-17')).toMatchObject({ month: 12, day: 10 })
+    expect(hijri('2027-06-16')).toMatchObject({ month: 1, day: 10 })
+    expect(hijri('2027-08-15')).toMatchObject({ month: 3, day: 12 })
+  })
+  it('matches the 2026 Urs (3–5 May) and the 2027 listing (24 Apr)', () => {
+    const urs26 = kalaburagiEventsBetween('2026-04-28', '2026-05-10', 0).filter((e) => e.name.startsWith('Urs')).map((e) => e.date)
+    expect(urs26).toEqual(['2026-05-03', '2026-05-04', '2026-05-05'])
+    const urs27 = kalaburagiEventsBetween('2027-04-15', '2027-04-30', 0).filter((e) => e.name.startsWith('Urs')).map((e) => e.date)
+    expect(urs27).toContain('2027-04-24')
+  })
+  it('weighs the Urs fully in the city and lightly elsewhere in the district', () => {
+    expect(ursStrength(3)).toBe(1)
+    expect(ursStrength(40)).toBeLessThan(0.5)
+    const far = kalaburagiEventsBetween('2026-05-03', '2026-05-03', 40).find((e) => e.name.startsWith('Urs'))
+    expect(far?.note).toMatch(/outside the city/)
+  })
+  it('keeps the brief inside Kalaburagi district', () => {
+    expect(inKalaburagiDistrict(KALABURAGI)).toBe(true)
+    expect(inKalaburagiDistrict(ALAND)).toBe(true)
+    expect(inKalaburagiDistrict(MYSURU)).toBe(false)
+    expect(districtQuery('Aland')).toBe('Aland, Kalaburagi, Karnataka')
+    expect(districtQuery('Gulbarga')).toBe('Gulbarga, Karnataka')
   })
   it('adds Kannada Rajyotsava only in Karnataka', () => {
     expect(eventsBetween('2026-11-01', '2026-11-01', MYSURU).some((e) => e.name === 'Kannada Rajyotsava')).toBe(true)
@@ -188,8 +206,8 @@ describe('the brief, end to end on synthetic data', () => {
   it('protects a street-food cart in heavy rain', async () => {
     const today = '2026-10-22'
     const b = await runBrief(
-      { business: 'gobi manchurian cart', place: 'Mysuru', today },
-      { fetchImpl: world(today, { rainyDates: ['2026-10-23'], rainMmPerHour: 12, rainProb: 95 }), place: MYSURU, useCache: false, now: at(today) },
+      { business: 'gobi manchurian cart', place: 'Aland', today },
+      { fetchImpl: world(today, { rainyDates: ['2026-10-23'], rainMmPerHour: 12, rainProb: 95 }), place: ALAND, useCache: false, now: at(today) },
     )
     expect(b.archetype.id).toBe('street_food')
     expect(b.verdict).toBe('protect')
@@ -200,7 +218,7 @@ describe('the brief, end to end on synthetic data', () => {
     const today = '2026-10-22'
     const b = await runBrief(
       { business: 'cotton farmer, 4 acres', place: 'Raichur', today },
-      { fetchImpl: world(today, { tMax: 32, rh: 55 }), place: MYSURU, useCache: false, now: at(today) },
+      { fetchImpl: world(today, { tMax: 32, rh: 55 }), place: ALAND, useCache: false, now: at(today) },
     )
     expect(b.archetype.id).toBe('farm_crop')
     expect(b.tactics.some((t) => t.id === 'farm.spray' || t.id === 'farm.no_spray')).toBe(true)
@@ -222,8 +240,8 @@ describe('the brief, end to end on synthetic data', () => {
   it('never fills a failed source: no forecast means no call and "Unavailable" weather', async () => {
     const today = '2026-10-22'
     const b = await runBrief(
-      { business: 'tea stall', place: 'Mysuru', today },
-      { fetchImpl: world(today, {}, { fail: { forecast: 503, soil: 503 } }), place: MYSURU, useCache: false, now: at(today) },
+      { business: 'tea stall', place: 'Aland', today },
+      { fetchImpl: world(today, {}, { fail: { forecast: 503, soil: 503 } }), place: ALAND, useCache: false, now: at(today) },
     )
     expect(b.verdict).toBeNull()
     expect(b.index).toBeNull()
@@ -240,10 +258,10 @@ describe('the brief, end to end on synthetic data', () => {
 
   it('drops a missing driver instead of zeroing it, and confidence falls', async () => {
     const today = '2026-10-22'
-    const full = await runBrief({ business: 'tea stall', place: 'Mysuru', today }, { fetchImpl: world(today), place: MYSURU, useCache: false, now: at(today) })
+    const full = await runBrief({ business: 'tea stall', place: 'Aland', today }, { fetchImpl: world(today), place: ALAND, useCache: false, now: at(today) })
     const noAir = await runBrief(
-      { business: 'tea stall', place: 'Mysuru', today },
-      { fetchImpl: world(today, {}, { fail: { air: 500, overpass: 429 } }), place: MYSURU, useCache: false, now: at(today) },
+      { business: 'tea stall', place: 'Aland', today },
+      { fetchImpl: world(today, {}, { fail: { air: 500, overpass: 429 } }), place: ALAND, useCache: false, now: at(today) },
     )
     expect(noAir.drivers.find((d) => d.id === 'air_quality')?.signal).toBeNull()
     expect(noAir.metrics.find((m) => m.id === 'air.pm25')?.value).toBeNull()
@@ -251,6 +269,13 @@ describe('the brief, end to end on synthetic data', () => {
     expect(noAir.locationStrength).toBeNull()
     expect(noAir.confidence!).toBeLessThan(full.confidence!)
     expect(noAir.sources.find((s) => s.id === 'osm')?.failure).toBe('rate_limited')
+  })
+
+  it('refuses a place outside Kalaburagi district', async () => {
+    const today = '2026-10-22'
+    const b = await runBrief({ business: 'tea stall', place: 'Mysuru', today }, { fetchImpl: world(today), place: MYSURU, useCache: false, now: at(today) })
+    expect(b.error).toMatch(/Kalaburagi district only/)
+    expect(b.sources[0].failure).toBe('out_of_area')
   })
 
   it('stops with a clear message when the place cannot be found', async () => {
@@ -262,7 +287,7 @@ describe('the brief, end to end on synthetic data', () => {
   it('builds facts for exactly tomorrow and the six days after', () => {
     const today = '2026-10-22'
     const fc = F.syntheticForecast({ start: addDays(today, -7), days: 23, tMax: 30, tMin: 20, rh: 60, rainProb: 70, rainMmPerHour: 1, rainyDates: [], wind: 5 })
-    const facts = buildFacts(MYSURU, today, { forecast: { ok: true, data: fc, fetchedAt: 0, cached: false } })
+    const facts = buildFacts(ALAND, today, { forecast: { ok: true, data: fc, fetchedAt: 0, cached: false } })
     expect(facts.days.map((d) => d.date)).toEqual(Array.from({ length: 7 }, (_, i) => addDays(today, i + 1)))
     expect(facts.days[0].hoursAvailable).toBe(24)
     expect(facts.past7.days).toBe(7)

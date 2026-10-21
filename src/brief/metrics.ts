@@ -40,11 +40,14 @@ import {
   WMO_TEXT,
 } from './formulas'
 import type { Dimension, Metric, Place, SourceId, SourceStatus } from './types'
+import { competitorPromos, TOPIC_LABELS } from './pulse/analyze'
+import type { Topic } from './pulse/types'
 
 type V = number | string | boolean | null
 
 export const DIMENSION_LABELS: Record<Dimension, string> = {
   decision: 'The decision',
+  local_pulse: 'Kalaburagi news pulse',
   weather_tomorrow: 'Tomorrow’s weather',
   weather_week: 'The week ahead',
   climate: 'Against the 10-year normal',
@@ -389,12 +392,19 @@ export function buildLedger(ctx: LedgerContext): Metric[] {
   const H = hijri(tm)
   push('cal.hijri', CA, 'Islamic date (computed)', H ? hijriLabel(H) : null, 'calendar', 'Umm al-Qura calendar; the Indian date often runs one day later.')
   push('cal.ramadan', CA, 'Ramadan', H ? H.month === 9 : null, 'calendar', 'Computed; subject to moon sighting.')
-  if (facts.calendar.nearKalaburagi) {
+  {
     const ursActive = ev.some((e) => e.date === tm && e.name.startsWith('Urs'))
-    push('cal.urs', CA, 'Urs of Khwaja Bande Nawaz', ursActive ? 'On tomorrow (computed)' : facts.calendar.nextUrs ? `Next: ${facts.calendar.nextUrs} (${daysBetween(facts.today, facts.calendar.nextUrs)} days, computed)` : null, 'calendar', '15–17 Dhu al-Qadah, computed; confirm with the dargah committee.')
-  } else {
-    push('cal.urs', CA, 'Urs of Khwaja Bande Nawaz', 'Not applicable (more than 15 km from Kalaburagi)', 'calendar', 'Applied only near Kalaburagi.')
+    const next = facts.calendar.nextUrs
+    push(
+      'cal.urs',
+      CA,
+      'Urs of Khwaja Bande Nawaz',
+      ursActive ? 'On tomorrow (computed)' : next ? `Next: ${next} (${daysBetween(facts.today, next)} days, computed)` : null,
+      'calendar',
+      '15–17 Dhu al-Qadah on the India-observed Islamic calendar; matched the 2026 Urs (3–5 May). Confirm with the dargah committee.',
+    )
   }
+  push('place.city_km', 'place', 'Distance from Kalaburagi city centre', facts.calendar.distanceFromCityKm, 'geocode', 'Straight line to the city centre (17.33° N, 76.83° E).', { unit: 'km' })
   const age = moonAgeDays(tm)
   push('cal.moon', CA, 'Moon phase (approximate)', `${moonPhaseName(age)}, ${f0(100 * moonIllumination(age))} % lit`, 'calendar', 'Mean synodic month from the 6 Jan 2000 new moon; good to about a day.', { reference: 'Purnima and Amavasya shift temple visits and some food habits' })
   const toFull = (14.77 - age + 29.53) % 29.53
@@ -403,6 +413,42 @@ export function buildLedger(ctx: LedgerContext): Metric[] {
   push('cal.season', CA, 'Season', imdSeason(tm), 'calendar', 'IMD seasons.')
   push('cal.market_day', CA, 'Weekly market (santhe) tomorrow', ctx.marketDay != null ? ctx.marketDay === wdi : null, 'calendar', 'From the market day you entered.')
   push('cal.coverage', 'data_quality', 'Holiday calendar covers tomorrow', inCoverage, 'calendar', `Holiday lists cover ${CALENDAR_COVERAGE.from} to ${CALENDAR_COVERAGE.to}.`)
+
+  // ------------------------------------------------------------ Kalaburagi news pulse
+  const LP: Dimension = 'local_pulse'
+  const P = facts.pulse
+  const rel = P ? P.items.filter((i) => i.scope !== 'outside' && (!i.publishedAt || ctx.now - Date.parse(i.publishedAt) <= P.windowDays * 86_400_000)) : []
+  push('pulse.posts', LP, `Local posts in the last ${P?.windowDays ?? 14} days`, P ? rel.length : null, 'pulse', 'Posts from the followed Kalaburagi channels that are about the district (or not clearly about elsewhere).', { fmt: ((v: number) => f0(v)) as never })
+  push('pulse.views', LP, 'Views on those posts', P ? rel.reduce((a, i) => a + (i.views ?? 0), 0) : null, 'pulse', 'Sum of view counts as last collected: how much attention local news is getting.', { fmt: ((v: number) => f0(v)) as never })
+  push('pulse.channels', LP, 'Channels with fresh posts', P ? P.channels.filter((c) => c.items > 0).length : null, 'pulse', 'Followed YouTube and Instagram accounts that returned posts.', { fmt: ((v: number) => f0(v)) as never })
+  push('pulse.fresh', LP, 'Pulse last collected', P?.freshAt ? (ctx.now - Date.parse(P.freshAt)) / 3_600_000 : null, 'pulse', 'Hours since the collector last stored posts.', { fmt: ((v: number) => `${f0(v)} h ago`) as never })
+  const ig = P?.sources.find((s) => s.source === 'instagram')
+  push('pulse.instagram', LP, 'Instagram collection', P ? (ig ? (ig.ok ? `${ig.items} posts` : `Not collected: ${ig.message ?? 'failed'}`) : 'No run recorded yet') : null, 'pulse', 'Instagram is read through Apify when its token is configured.')
+  const top = P?.outliers[0]
+  push('pulse.top_outlier', LP, 'Biggest outlier post', P ? (top ? `${(top.outlier ?? 0).toFixed(1)}× usual views: “${top.title.slice(0, 90)}” (${top.channelName})` : 'No post beat its channel by 1.5× or more') : null, 'pulse', 'Views divided by the median of the same channel and format (at least 5 posts to compare).')
+  const rise = P?.rising[0]
+  push('pulse.rising', LP, 'Rising fastest today', P ? (rise ? `+${f0(rise.gain24h ?? 0)} views in a day: “${rise.title.slice(0, 90)}”` : 'Not enough snapshots yet') : null, 'pulse', 'Views gained between collection runs about a day apart.')
+  const in7 = P ? P.upcoming.filter((e) => e.date != null && e.date <= addDays(facts.today, 7)) : []
+  push('pulse.events', LP, 'Events announced for the next 7 days', P ? in7.length : null, 'pulse', 'Dates written in posts (or “tomorrow” in a post from the last two days).', { fmt: ((v: number) => (v && in7[0] ? `${v} · next: ${in7[0].title.slice(0, 70)} (${in7[0].date})` : f0(v))) as never })
+  const onTomorrow = P ? P.upcoming.filter((e) => e.date != null && e.date <= tm && (e.endDate ?? e.date) >= tm) : []
+  push('pulse.events_tomorrow', LP, 'Announced for tomorrow', P ? (onTomorrow.length ? onTomorrow.map((e) => `${e.title.slice(0, 60)} (${e.kind})`).join('; ') : 'Nothing announced') : null, 'pulse', 'Events whose stated dates cover tomorrow.')
+  const notice = P?.notices[0]
+  push('pulse.notices', LP, 'Standing public notices', P ? (notice ? `${notice.title} (${notice.channelName})` : 'None seen') : null, 'pulse', 'Posts that read as an official notice or rule (closing times, bans, prohibitory orders).')
+  const share = (t: Topic) => (P && rel.length ? rel.filter((i) => i.topics.includes(t)).length : null)
+  for (const t of ['protest', 'crime_safety', 'civic', 'commerce_promo', 'religious_cultural', 'weather_agri'] as Topic[]) {
+    const c = share(t)
+    push(`pulse.topic.${t}`, LP, `Posts about: ${TOPIC_LABELS[t].toLowerCase()}`, c, 'pulse', 'Keyword rules over titles and captions (English, Hinglish, Urdu in Latin script, Kannada).', {
+      fmt: ((v: number) => `${v} (${rel.length ? Math.round((100 * v) / rel.length) : 0} %)`) as never,
+    })
+  }
+  const hp = P?.hotPlaces[0]
+  push('pulse.hot_place', LP, 'Most-mentioned place', P ? (hp ? `${hp.place} (${hp.count} posts)` : 'No locality named') : null, 'pulse', 'Kalaburagi localities named in posts.')
+  const mine = P ? competitorPromos(P, archetype.id) : []
+  push('pulse.promos', LP, `Adverts and offers for ${archetype.label.toLowerCase()}`, P ? mine.length : null, 'pulse', 'Promotional posts that read as your line of business.', {
+    fmt: ((v: number) => (v && mine[0] ? `${v} · newest: “${mine[0].title.slice(0, 70)}”` : f0(v))) as never,
+  })
+  const bp = P?.patterns[0]
+  push('pulse.best_pattern', LP, 'Content pattern pulling the most views', P ? (bp ? `${bp.label} (${bp.medianOutlier?.toFixed(1)}× usual, ${bp.count} posts)` : 'Not enough posts') : null, 'pulse', 'Median outlier ratio of posts using each pattern, at least 2 posts.')
 
   // ------------------------------------------------------------ data quality
   const DQ: Dimension = 'data_quality'

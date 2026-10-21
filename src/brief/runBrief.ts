@@ -20,6 +20,10 @@ import {
   type OsmCountSpec,
 } from './sources'
 import { buildTactics } from './tactics'
+import { inKalaburagiDistrict } from './kalaburagi'
+import { analyzePulse } from './pulse/analyze'
+import { loadPulseFromSupabase, type PulseLoader } from './pulse/load'
+import type { PulseReport } from './pulse/types'
 import type { Brief, BriefInput, Metric, Place, SourceId, SourceResult, SourceStatus } from './types'
 
 export interface RunOptions {
@@ -29,6 +33,8 @@ export interface RunOptions {
   place?: Place
   now?: number
   onProgress?: (step: string) => void
+  /** Where the Kalaburagi news pulse comes from (Supabase by default; injected in tests). */
+  pulseLoader?: PulseLoader
 }
 
 function status<T>(id: SourceId, r: SourceResult<T> | undefined): SourceStatus {
@@ -70,8 +76,9 @@ export async function runBrief(input: BriefInput, opts: RunOptions = {}): Promis
     outlook: [],
     tactics: [],
     events: [],
-    coverage: { live: sources.filter((s) => s.ok).length, total: 8 },
+    coverage: { live: sources.filter((s) => s.ok).length, total: 9 },
     headline: error,
+    pulse: null,
     confidence: null,
     competitors: [],
     generatedAt: now,
@@ -90,10 +97,18 @@ export async function runBrief(input: BriefInput, opts: RunOptions = {}): Promis
     place = g.data
     geoStatus = status('geocode', g)
   }
+  // The brief is built for Kalaburagi district only: its calendar, news channels and places.
+  if (!inKalaburagiDistrict(place)) {
+    return empty(
+      `“${place.displayName.split(',').slice(0, 3).join(',')}” is outside Kalaburagi district. The brief covers Kalaburagi district only for now: try a town, village or area there, such as Aland, Sedam or Jagat Circle.`,
+      [{ id: 'geocode', ok: false, cached: false, failure: 'out_of_area', message: 'Outside Kalaburagi district.' }],
+    )
+  }
 
-  opts.onProgress?.('Reading weather, climate, air, rivers and the map')
+  opts.onProgress?.('Reading weather, climate, air, rivers, the map and the local news')
   const { lat, lng } = place
-  const [forecast, soil, climate, air, river, elevation, osm] = await Promise.all([
+  const loadPulse = opts.pulseLoader ?? loadPulseFromSupabase
+  const [forecast, soil, climate, air, river, elevation, osm, pulseRes] = await Promise.all([
     fetchForecast(lat, lng, so),
     fetchSoil(lat, lng, so),
     fetchClimate(lat, lng, today, so),
@@ -101,6 +116,7 @@ export async function runBrief(input: BriefInput, opts: RunOptions = {}): Promis
     fetchRiver(lat, lng, so),
     fetchElevation(lat, lng, so),
     fetchOsm(lat, lng, osmSpecs(archetype.competitorFilters), archetype.competitorFilters, 2000, so),
+    loadPulse(new Date(now)),
   ])
   const raw: RawSources = { forecast, soil, climate, air, river, elevation, osm }
 
@@ -115,11 +131,21 @@ export async function runBrief(input: BriefInput, opts: RunOptions = {}): Promis
     status('river', river),
     status('elevation', elevation),
     status('osm', osm),
+    status('pulse', pulseRes),
     { id: 'calendar', ok: true, cached: false, fetchedAt: now },
   ]
 
   opts.onProgress?.('Scoring tomorrow')
   const facts = buildFacts(place, today, raw)
+  const pulse: PulseReport | null = pulseRes.ok
+    ? analyzePulse(pulseRes.data.items, {
+        now: new Date(now),
+        today,
+        freshAt: new Date(pulseRes.fetchedAt).toISOString(),
+        sources: pulseRes.data.runs.map((r) => ({ source: r.source, ok: r.ok, items: r.items, message: r.message, finishedAt: r.finished_at })),
+      })
+    : null
+  facts.pulse = pulse
   const metrics: Metric[] = buildLedger({ facts, place, archetype, marketDay: input.marketDay, sources, now })
 
   const T = facts.days[0] ?? null
@@ -197,6 +223,7 @@ export async function runBrief(input: BriefInput, opts: RunOptions = {}): Promis
     headline: forecast.ok ? headline(verdict, scored.drivers, severe, archetype) : 'The weather forecast did not load, so there is no call on tomorrow. Try again in a minute.',
     confidence,
     competitors: (facts.osm?.competitors ?? []).slice(0, 12).map((c) => ({ name: c.name, distanceM: c.distanceM, kind: c.kind })),
+    pulse,
     generatedAt: now,
   }
 }

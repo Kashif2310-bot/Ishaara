@@ -9,8 +9,9 @@
  *   3. Decision (engine.ts, tactics.ts) — transparent scoring and rule-based tactics.
  *      Every tactic cites the metric ids it rests on. No language model writes numbers.
  */
+import type { PulseReport } from './pulse/types'
 
-export type FailureKind = 'rate_limited' | 'timed_out' | 'unreachable' | 'no_match' | 'bad_response'
+export type FailureKind = 'rate_limited' | 'timed_out' | 'unreachable' | 'no_match' | 'bad_response' | 'not_configured' | 'out_of_area'
 
 export type SourceId =
   | 'geocode'
@@ -21,6 +22,7 @@ export type SourceId =
   | 'elevation'
   | 'osm'
   | 'calendar'
+  | 'pulse'
 
 export type SourceResult<T> =
   | { ok: true; data: T; fetchedAt: number; cached: boolean }
@@ -47,6 +49,7 @@ export type Dimension =
   | 'competition'
   | 'calendar'
   | 'data_quality'
+  | 'local_pulse'
 
 /** Direction a metric pushes tomorrow's opportunity for THIS business, decided by the engine. */
 export type Effect = 'up' | 'down' | 'neutral'
@@ -103,6 +106,7 @@ export type DriverId =
   | 'climate_anomaly'
   | 'field_conditions'
   | 'market_day'
+  | 'local_events'
 
 export interface DriverValue {
   id: DriverId
@@ -140,7 +144,7 @@ export interface Tactic {
 export interface CalendarEvent {
   date: string
   name: string
-  kind: 'national' | 'restricted' | 'state' | 'islamic_computed'
+  kind: 'national' | 'restricted' | 'state' | 'local' | 'islamic_computed'
   source: string
   /** Note shown beside the event, e.g. moon-sighting caveat. */
   note?: string
@@ -197,6 +201,8 @@ export interface Brief {
   /** 0..100: how much of the evidence was actually available, and how far ahead the forecast is. */
   confidence: number | null
   competitors: Array<{ name: string; distanceM: number; kind: string }>
+  /** The Kalaburagi news pulse behind this brief, or null if it could not be loaded. */
+  pulse: PulseReport | null
   generatedAt: number
   error?: string
 }
