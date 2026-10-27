@@ -1,5 +1,11 @@
 <!-- README last revised: 2026-10-01. Keep team roles, screenshots (docs/screenshots/) and "Recent changes" current; retake the screenshots when the UI changes. -->
 
+**Ishaara** — a hyperlocal business advisor and government-scheme assistant that helps rural micro-entrepreneurs in India decide what to start, where, and with how much money, then finds and fills in the right government scheme application. **Theme:** Rural Development & Livelihoods.
+
+No live demo is hosted today — `netlify.toml` and `vercel.json` in this repo are build configs only, not linked to any deployed site. Run it locally: see [Setup](#3-installation--configuration) and [Try it in two minutes](#try-it-in-two-minutes).
+
+---
+
 <div align="center">
 
 # Ishara
@@ -129,6 +135,8 @@ Captured from the running app on 2026-10-01 (`docs/screenshots/`). The scan scre
 ---
 
 ## 2. Architecture & System Design
+
+The full architecture — diagram, both citizen flows, persistence paths, external services and the assistant's pipeline and trust model — is in [`docs/TECHNICAL_DESIGN.md`](docs/TECHNICAL_DESIGN.md). A summary follows.
 
 **Stack.** Frontend: React 19, TypeScript, Vite 8, Tailwind CSS 4, React Router 7, i18next, Leaflet, Recharts, ethers 6. Backend: FastAPI with SQLAlchemy and Alembic, on SQLite by default. Supabase: Postgres with row-level security, anonymous auth, and two Edge Functions.
 
@@ -451,14 +459,13 @@ Sourced from [`docs/HONESTY_LEDGER.md`](docs/HONESTY_LEDGER.md) and [`docs/hando
 
 ## 6. Governance & License
 
-### Core team
+### Team (Hack for Social Cause)
 
-Lead developers on this project.
-
-| Member | Role |
+| Member | Contribution (from this repository's commit history) |
 |---|---|
-| **Jordan Varghese** | AI voice assistant integration (Gemini Live), backend reliability engineering (scan caching, rate-limiting, failure handling), scheme data verification and sourcing, Supabase backend integration, testing discipline (full local gate before every commit) across the codebase |
-| **Kashif** (Md Mujtaba Kashif) | Original voice assistant foundation and early scheme assistant; built the Ishaara voice assistant (`/assistant`) and the Jobs (`/jobs`) employment-matching feature |
+| **Md. Mujtaba Kashif** | Original voice assistant foundation and early scheme assistant, including the optional Supabase backend and live official-source retrieval layer; built the Ishaara voice assistant (`/assistant`) and the Jobs (`/jobs`) employment-matching feature |
+| **Jordan Varghese** | AI voice assistant integration (Gemini Live), backend reliability engineering (scan caching, rate-limiting, failure handling), scheme data verification and sourcing, Supabase backend integration, testing discipline (full local gate before every commit) across the codebase; built the Kalaburagi Daily Business Brief (`/brief`) |
+| **Prerana Prakash** | The FastAPI persistence/auth layer for the scan flow: the FastAPI skeleton and health check, the initial schema and migration, user and assessment endpoints with NSFDC checks, persisted assessments with id-based routes, and the demo login and history; also the first citizen application and admin review flows |
 
 ### Contributors
 
@@ -468,7 +475,6 @@ Supporting contributions, including from the wider original LokPulse team (see [
 |---|---|
 | **Praneel** | Google Maps location picking and competition analysis (`src/maps/`) |
 | **Harshvardhan** | Jobs (`/jobs`) map feature and listing improvements |
-| **Prerana Prakash** | The FastAPI persistence/auth layer for the scan flow |
 | **vamshikrishna21vk** | The Supabase schema |
 | **Aadita** | The `/apply/hub` workflow |
 
@@ -494,6 +500,8 @@ Released under the [MIT License](LICENSE).
 
 Newest first. Add one dated line per revision instead of rewriting this file.
 
+Built on a prototype first developed in September 2026; extended in October 2026 with the Kalaburagi Daily Business Brief and a larger scheme catalog.
+
 - **2026-10-22** — Narrowed the brief to Kalaburagi district and added the Kalaburagi news pulse (`src/brief/pulse/`, `supabase/functions/local-pulse/`, migration `202610220001_local_pulse.sql`) and a Kalaburagi event calendar with sources (`src/brief/kalaburagi.ts`). Islamic dates now follow India's observed calendar, checked against DoPT 2027 and the 2026 Urs.
 - **2026-10-22** — Added the daily business brief (`/brief`, `src/brief/`): live public data → about 180 metrics → a transparent push / normal / protect call for tomorrow, a 7-day outlook, and actions that cite the metrics they rest on. Holiday dates are copied from the DoPT 2026 and 2027 orders; Islamic dates are computed and labelled as such.
 - **2026-10-19** — Scheme catalog expanded with a Southern-India focus: Udyogini and NEEDS (verified against KSWDC's and the Tamil Nadu MSME Department's own primary sources), then KMDC and KMVSTDCL's two schemes (verified against KMDC's and KMVSTDCL's own primary sources) — 9 → 14 schemes. Removed all hackathon/event branding from this README and `docs/` (real scheme, ministry and corporation names were kept). Restructured the team section into Core team (Jordan Varghese, Kashif) and Contributors (Praneel, Harshvardhan, Prerana Prakash, vamshikrishna21vk, Aadita). Added [`docs/TECHNICAL_DESIGN.md`](docs/TECHNICAL_DESIGN.md), consolidating the architecture section and `docs/ASSISTANT.md`; `docs/MASTER_SPEC.md` is now marked historical.
@@ -504,7 +512,5 @@ Newest first. Add one dated line per revision instead of rewriting this file.
   - the keyless fallback fix: without a Maps key, the app keeps its original OpenStreetMap flow.
 
   All four team roles are filled in, and the test results and example output now cite `63128b4`.
-- **2026-10-01** — Polished for the hackathon: header, a two-minute demo path, and screenshots of the running app (`docs/screenshots/`). Wording now matches `/assistant` opening the Ishaara voice assistant. Added the live voice probe, and moved the test results and example output to `12c3ab3`.
 - **2026-10-01** — `/assistant` and the Assistant link in the navigation open the Ishaara voice assistant again (project owner's decision). The previous assistant moved to `/assistant-classic`; a scan case's assistant stays at `/assistant/:id`.
 - **2026-10-01** — Added the experimental `/voice-assistant/` page and the Jobs page (`/jobs`, sample data) after merging `feature/ishaara-voice-assistant`. `/assistant` stays the primary assistant.
-- **2026-10-01** — README restructured for ASYNC'26. It now covers overview, architecture, setup, developer experience, known limitations and governance, and adds the before/during-ASYNC'26 history, the team section and the MIT license. The assistant deep-dive moved to [`docs/ASSISTANT.md`](docs/ASSISTANT.md). The honesty ledger was corrected for Hindi voice, real-microphone voice testing and the intermittent voice start failure.
