@@ -6,7 +6,7 @@ Architecture, the two citizen flows, persistence, external services, and the sch
 
 **Frontend:** React 19, TypeScript, Vite 8, Tailwind CSS 4, React Router 7, i18next, Leaflet, Recharts, ethers 6.
 **Backend:** FastAPI with SQLAlchemy and Alembic, on SQLite by default.
-**Supabase:** Postgres with row-level security, anonymous auth, and two Edge Functions.
+**Supabase:** Postgres with row-level security, anonymous auth, and three Edge Functions.
 
 ## 2. System diagram
 
@@ -25,7 +25,7 @@ flowchart TB
 
   fastapi[("FastAPI + SQLAlchemy · SQLite")]
   supabase[("Supabase Postgres + RLS · anonymous auth")]
-  fns["Supabase Edge Functions: gemini-live-token, live-scheme-retrieval"]
+  fns["Supabase Edge Functions: gemini-live-token, live-scheme-retrieval, local-pulse"]
   gemini["Gemini Live"]
   datagov["data.gov.in · not configured"]
   geo["Open-Meteo · Nominatim · Overpass · Google Maps (optional)"]
@@ -56,6 +56,8 @@ flowchart TB
 2. `/apply` (guided wizard) and `/apply/hub` (structured `LP-APP-*` workflow) save a tracked application to `localStorage` first. They then sync it to **Supabase** under the citizen's anonymous identity.
 
 **The one bridge between flows:** opening `/assistant/:id` for a completed scan seeds the classic assistant with that scan's profile (`src/assistant/fromAssessment.ts`). It is one-way and purely client-side, and it is reached by URL; the navigation's Assistant link opens the Ishaara voice assistant.
+
+The Daily Business Brief (`/brief`) is a third, separate flow, with its own sources, engine and state. It is in [section 11](#11-daily-business-brief-flow-brief).
 
 ## 4. Three persistence paths — they do not interoperate yet
 
@@ -200,6 +202,45 @@ For a local Supabase stack, use `npm run supabase:start`, `supabase:status` and 
 
 Tracked applications are written to the device first (`src/apply/store.ts`), then synced to Supabase. They are not a government register.
 
+## 11. Daily Business Brief flow (`/brief`)
+
+A separate flow from the two above: it shares no state with them and uses its own sources and engine. It answers one question for a business in Kalaburagi district — push, run a normal day, or protect tomorrow. Full detail, including the limits and the Kalaburagi-only scope, is in [`DAILY_BRIEF.md`](DAILY_BRIEF.md).
+
+```mermaid
+flowchart LR
+  input["Business + place"] --> geo["Geocode · Nominatim"]
+  geo --> gate{"Inside Kalaburagi<br/>district?"}
+  gate -- no --> refused["Refused with a message"]
+  gate -- yes --> src
+
+  subgraph src["Sources, in parallel (9, no API keys)"]
+    wx["Forecast + soil"]
+    clim["Climate · ERA5"]
+    aq["Air · CAMS"]
+    riv["River · GloFAS"]
+    elev["Elevation · Copernicus DEM"]
+    osm["Overpass"]
+    pulse["News pulse · Supabase<br/>or labelled snapshot"]
+  end
+
+  cal["Built-in calendar:<br/>DoPT, Karnataka, Kalaburagi,<br/>computed Islamic dates"] --> facts
+  src --> facts["Facts · facts.ts<br/>per-day typed numbers"]
+  facts --> ledger["Metric ledger · metrics.ts<br/>200 metrics, 13 dimensions"]
+  facts --> engine["Engine · engine.ts<br/>12 drivers: signal x weight"]
+  engine --> verdict["Verdict<br/>index = 50 + 50·tanh(sum/2)<br/>push >= 65 · protect < 35"]
+  verdict --> tactics["Tactics · tactics.ts<br/>ranked actions, each citing metrics"]
+  ledger --> ui["/brief page"]
+  verdict --> ui
+  tactics --> ui
+```
+
+- **Sources.** Nine, none needing a key. A failed source is reported as unavailable; nothing is substituted from another place or day.
+- **Facts.** `facts.ts` turns raw responses into typed per-day numbers, so a number shown and a number scored are always the same number.
+- **Ledger.** `metrics.ts` produces 200 metrics across 13 dimensions, each with its unit, source and method. A metric whose source failed shows "Unavailable".
+- **Engine.** Each of 12 drivers becomes a signal in −1…1, multiplied by the business type's own weight (21 types). A driver with no data is dropped from the sum, not zeroed, and confidence falls.
+- **Verdict.** `index = 50 + 50 · tanh(Σ w·s / 2)`; push at 65 or above, protect below 35. Severe weather overrides it to protect for outdoor work. With no forecast there is no call at all.
+- **Tactics.** Rule-based actions, each naming the metric ids it rests on. Farm and livestock notes defer any product, dose or variety to the KVK or a vet.
+
 ---
 
-For what's actually reliable vs. demo-only today, see the README's [Reliability & Known Limitations](../README.md#5-reliability--known-limitations) and [`HONESTY_LEDGER.md`](HONESTY_LEDGER.md). For the assistant's own deep-dive (unchanged), see [`ASSISTANT.md`](ASSISTANT.md).
+For what's actually reliable vs. demo-only today, see the README's [Reliability & Known Limitations](../README.md#5-reliability--known-limitations) and [`HONESTY_LEDGER.md`](HONESTY_LEDGER.md). For the assistant's own deep-dive (unchanged), see [`ASSISTANT.md`](ASSISTANT.md). For the Daily Business Brief, see [`DAILY_BRIEF.md`](DAILY_BRIEF.md).

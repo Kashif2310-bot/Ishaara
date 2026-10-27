@@ -74,7 +74,7 @@ This repository's history splits at **22 September 2026**. The dates below are c
 - **Scan reliability:** Nominatim rate-limit compliance, telling rate limits, timeouts and missing places apart, and a 3-hour result cache.
 - **Ishaara voice assistant and Jobs (30 Sep):** a full-screen voice advisor that fills in the application form as the citizen talks, and a Jobs page for direct hiring (sample data).
 - **Maps and the jobs map (1 Oct):** optional Google Maps location picking and Google Places competition analysis, falling back automatically to the keyless OpenStreetMap flow when no key is set; and a map of job openings on `/jobs`.
-- **Tests:** about 500 new tests, roughly 760 → 1,259 declared tests (about 1.66×).
+- **Tests:** roughly 760 → **1,359 declared tests** (about 1.79×), counted from a real run on 2026-10-27: 1,330 passed, 29 skipped, 0 failed.
 
 *Note:* this repository's commit history also includes contributions from the wider original LokPulse team, acknowledged under [Contributors](#contributors) below.
 
@@ -95,7 +95,7 @@ Rural enterprise failure is rarely just "no loan". More often it is **the wrong 
 |---|---|---|
 | **Hyperlocal scan** (`/scan`) | Profile + location → live weather (Open-Meteo), live geocoding (Nominatim) and live competitor density (Overpass, or Google Places when a Maps key is set) for any Indian place; seeded mandi and festival signals for 5 curated Karnataka villages | Live APIs; seeded data where noted |
 | **Competition analysis** (optional, Google Maps; `src/maps/`) | With `VITE_GOOGLE_MAPS_API_KEY` set: map-based location picking and Google Places competitor data on `/apply` and live-place scans. Without a key: falls back automatically to the original OpenStreetMap flow — the village dropdown, "Other / not listed", and Overpass lookups — with no functionality lost | Optional; needs your own Maps key (not provided). The keyless fallback was verified against the pre-Maps code on 2026-10-01 |
-| **Kalaburagi daily business brief** (`/brief`; `src/brief/`) | Any business anywhere in Kalaburagi district → a call for tomorrow (push / normal / protect), ranked actions, a 7-day outlook and a ledger of about 200 measurements, each with its unit, source and method. Reads tomorrow's hourly forecast, 10 years of local climate, air quality, river flow, elevation, the OpenStreetMap features around the spot, Kalaburagi's own calendar (Urs of Khwaja Bande Nawaz, Sharanabasaveshwar jatra, Islamic dates as observed in India, Karnataka holidays) and a **news pulse** of the city's channels (Gulbarga Ki Awaaz, gohash, Gulbarga News, Gulbarga Headlines, Gulbarga 24 News, Kalaburagi 24/7): outlier posts against each channel's usual reach, announced events and notices, rivals' adverts, topics and places in the news. Failed sources are shown as unavailable, never filled in. Farm and livestock notes defer product and dose choices to the KVK or vet | Live in the browser, no keys for weather and maps. The pulse needs the `local_pulse` migration and the `local-pulse` Edge Function deployed (YouTube is keyless; Instagram needs an `APIFY_TOKEN`). English only. Tested on synthetic fixtures plus a real 22 Oct 2026 snapshot of the channels; the live services were not reachable from the build machine, so the first real run should be checked by hand |
+| **Kalaburagi daily business brief** (`/brief`; `src/brief/`) | Any business anywhere in Kalaburagi district → a call for tomorrow (push / normal / protect), ranked actions, a 7-day outlook and a ledger of about 200 measurements, each with its unit, source and method. Reads tomorrow's hourly forecast, 10 years of local climate, air quality, river flow, elevation, the OpenStreetMap features around the spot, Kalaburagi's own calendar (Urs of Khwaja Bande Nawaz, Sharanabasaveshwar jatra, Islamic dates as observed in India, Karnataka holidays) and a **news pulse** of the city's channels (Gulbarga Ki Awaaz, gohash, Gulbarga News, Gulbarga Headlines, Gulbarga 24 News, Kalaburagi 24/7): outlier posts against each channel's usual reach, announced events and notices, rivals' adverts, topics and places in the news. Failed sources are shown as unavailable, never filled in. Farm and livestock notes defer product and dose choices to the KVK or vet | Live in the browser, no keys for weather and maps. The pulse needs the `local_pulse` migration and the `local-pulse` Edge Function deployed (YouTube is keyless; Instagram needs an `APIFY_TOKEN`). English only. Tested on synthetic fixtures plus a real 22 Oct 2026 snapshot of the channels. In a live run on 2026-10-27 the forecast, climate, air-quality, river and elevation services answered; Overpass was rate limited and the pulse tables are not set up, so the snapshot was used (details below) |
 | **LokScore** | 0–100 score: demand 25%, competition gap 20%, weather fit 15%, financial coverage 25%, eligibility 15% (`src/lib/config.ts`) | Live, local computation |
 | **NSFDC finance engine** | Exact scheme rules (table below), reducing-balance quarterly annuity EMI in integer paise | Live, locked by `src/lib/finance.test.ts` |
 | **Adaptive sanction quorum** (`/sanction`) | LokScore ≥ 80 → 2-of-3 signers; ≥ 60 → 3-of-5; below 60 → 4-of-5 plus a mentor. Every signature is real secp256k1 ECDSA (`ethers`) | Real cryptography; stored in the browser only |
@@ -121,6 +121,48 @@ Rural enterprise failure is rarely just "no loan". More often it is **the wrong 
 
 **Southern-India depth:** six of the 14 are state-specific, across three southern states — four in Karnataka (Udyogini, KMDC's Self-Employment Scheme, and KMVSTDCL's two Scheduled Tribe schemes), one in Tamil Nadu (NEEDS) and one in Kerala (Kudumbashree) — each verified against that state corporation's own official page, not a secondary aggregator.
 
+### Daily Business Brief (Kalaburagi)
+
+**What it does.** Open `/brief`, type what the business is (for example "saree shop", "lassi stall", "tur farmer, 4 acres") and where it is in Kalaburagi district. The brief answers one question for tomorrow: **push**, **run a normal day**, or **protect**. It adds ranked actions, an hour-by-hour chart, a 7-day outlook, the nearest mapped competitors, the city's news pulse, and a ledger of all **200 measurements** it used, each with its unit, source and method. It covers 21 business types, from tea stalls and kirana stores to crop farms, dairies and poultry. Everything runs in the browser from free public data, and no language model writes any number or rule. Places outside Kalaburagi district are refused with a message. Full design and limits: [`docs/DAILY_BRIEF.md`](docs/DAILY_BRIEF.md).
+
+**The 9 data sources** (`src/brief/sources.ts`, `src/brief/pulse/load.ts`):
+
+| # | Source | What it gives the brief |
+|---|---|---|
+| 1 | OpenStreetMap Nominatim | The place you type → coordinates, district and state |
+| 2 | Open-Meteo Forecast API | Hourly and daily weather for 16 days ahead and 7 days back; soil moisture and temperature (a separate request, reported under this source) |
+| 3 | Open-Meteo Historical Weather API (ERA5) | Ten complete years of daily history for the spot, used as the "normal" |
+| 4 | Open-Meteo Air Quality API (CAMS) | PM2.5, PM10, ozone, dust and US AQI for tomorrow |
+| 5 | Open-Meteo Flood API (GloFAS) | River discharge for the nearest river cell, against its typical level |
+| 6 | Open-Meteo Elevation API (Copernicus DEM) | Height above sea level |
+| 7 | OpenStreetMap Overpass API (two public mirrors, raced) | Counts of 29 kinds of mapped feature around the spot (schools, bus stops, temples, mosques, markets…) and of similar businesses within 500 m, 1 km and 2 km |
+| 8 | Built-in calendar (no network call) | DoPT 2026–2027 holidays, Karnataka holidays, Kalaburagi's own events with sources, and Islamic dates computed for India |
+| 9 | Kalaburagi news pulse | Posts from the city's news channels on YouTube and Instagram, read from Supabase tables that the optional `local-pulse` collector fills. **Without the collector, this section shows a labelled snapshot captured on 22 Oct 2026, 03:45 IST** |
+
+**How the verdict is computed** (`src/brief/engine.ts`):
+
+- 12 drivers (heat, rain, comfortable hours outdoors, clean air, festival buying, weekend or holiday, salary week, religious gathering, warmer than normal, field-work conditions, weekly market day, events in the local news). Each becomes a **signal** `s` between −1 and 1, read from the measurements.
+- Each business type has a hand-written **weight** `w` between −1 and 1 for each driver. Heat lifts a lassi stall (`w = 1`) and hurts a tea stall (`w = −0.5`).
+- **`index = 50 + 50 · tanh(Σ w·s / 2)`**, from 0 to 100, where 50 is an ordinary day.
+- **Push if index ≥ 65 · normal if 35 ≤ index < 65 · protect if index < 35.**
+- A driver whose data is missing is left out of the sum, not counted as zero, and the brief's confidence drops. Confidence is `70 % × the share of driver weight that had live data + 30 % × the share of sources that answered`.
+- Severe weather overrides the index. Tomorrow is set to **protect** for outdoor stalls, crop farms and livestock in IMD heavy rain (≥ 64.5 mm), gusts ≥ 60 km/h or a heat index ≥ 54 °C. In the 7-day outlook the same override applies to outdoor stalls only.
+- If the weather forecast does not load, there is no call at all.
+
+**How to run it.** No API keys are needed: none of the nine sources needs one. With Node 22.12+ or 24:
+
+```bash
+npm install
+npm run dev
+```
+
+Then open `http://localhost:5173/brief`, or click **Brief** in the top bar. The live news collector is optional. It needs a Supabase project with the `local_pulse` migration, the `local-pulse` Edge Function and a `PULSE_CRON_SECRET` secret (plus `APIFY_TOKEN` for Instagram); see [`docs/DAILY_BRIEF.md`](docs/DAILY_BRIEF.md). Without it, everything else still runs, and the news section says it is showing the snapshot.
+
+**Tests and a live check.**
+- **Tests:** the brief's 57 tests pass (`npx vitest run src/brief`: 38 in `brief.test.ts`, 19 in `pulse/pulse.test.ts`, run 2026-10-27). They use synthetic weather and map data and the saved channel snapshot, and they call no live service.
+- **Live check:** on 2026-10-27 a brief for a tea stall in Kalaburagi city was run from a Node script against the real services, with no keys. The forecast, climate, air-quality, river and elevation services all answered. Overpass answered "rate limited" on both attempts. The pulse tables are not set up on the Supabase project this repository is connected to, so the snapshot was used. 157 of the 200 measurements were available.
+- **Not covered by that check:** geocoding was not exercised, because the app's geocoder failed when called from Node, so the city's coordinates were passed in directly.
+
 ### Screenshots
 
 Captured from the running app on 2026-10-01 (`docs/screenshots/`). The scan screens use the built-in demo case.
@@ -138,7 +180,7 @@ Captured from the running app on 2026-10-01 (`docs/screenshots/`). The scan scre
 
 The full architecture — diagram, both citizen flows, persistence paths, external services and the assistant's pipeline and trust model — is in [`docs/TECHNICAL_DESIGN.md`](docs/TECHNICAL_DESIGN.md). A summary follows.
 
-**Stack.** Frontend: React 19, TypeScript, Vite 8, Tailwind CSS 4, React Router 7, i18next, Leaflet, Recharts, ethers 6. Backend: FastAPI with SQLAlchemy and Alembic, on SQLite by default. Supabase: Postgres with row-level security, anonymous auth, and two Edge Functions.
+**Stack.** Frontend: React 19, TypeScript, Vite 8, Tailwind CSS 4, React Router 7, i18next, Leaflet, Recharts, ethers 6. Backend: FastAPI with SQLAlchemy and Alembic, on SQLite by default. Supabase: Postgres with row-level security, anonymous auth, and three Edge Functions.
 
 ```mermaid
 flowchart TB
@@ -155,7 +197,7 @@ flowchart TB
 
   fastapi[("FastAPI + SQLAlchemy · SQLite")]
   supabase[("Supabase Postgres + RLS · anonymous auth")]
-  fns["Supabase Edge Functions: gemini-live-token, live-scheme-retrieval"]
+  fns["Supabase Edge Functions: gemini-live-token, live-scheme-retrieval, local-pulse"]
   gemini["Gemini Live"]
   datagov["data.gov.in · not configured"]
   geo["Open-Meteo · Nominatim · Overpass · Google Maps (optional)"]
@@ -376,18 +418,19 @@ npm run lint     # oxlint --deny-warnings
 npm run build    # tsc -b && vite build
 ```
 
-Current results (commit `63128b4`, 2026-10-01):
+Current results (run 2026-10-27 at commit `2ef7204`; the documentation commits after it change no code):
 
 | Command | Result |
 |---|---|
-| `npx vitest run` | **1,255 passed, 29 skipped**, 0 failed (135 files: 130 passed, 5 skipped) |
+| `npx vitest run` | **1,330 passed, 29 skipped**, 0 failed (137 files: 132 passed, 5 skipped) |
+| `npx vitest run src/brief` | **57 passed** (the Daily Business Brief: 38 in `brief.test.ts`, 19 in `pulse/pulse.test.ts`) |
 | `npx tsc -b` | No errors |
 | `npm run lint` | No warnings or errors |
 | `npm run build` | Succeeds |
-| `server`: `.\.venv\Scripts\python.exe -m pytest -q` | **18 passed** (in-memory SQLite) |
+| `server`: `.\.venv\Scripts\python.exe -m pytest -q` | **18 passed**, 5 warnings (in-memory SQLite) |
 
 - **Skipped tests:** the 29 skipped tests are exactly the 5 hosted-Supabase integration files. They run only with `SUPABASE_INTEGRATION=1` and real credentials.
-- **End-to-end:** `npm run test:e2e` covers 36 Playwright tests in 9 files (`e2e/`). They were not run for this README, so there is no current pass count. One of them, `e2e/apply-admin.spec.ts`, picks the location on the Google map, so it needs a Maps key.
+- **End-to-end:** `npm run test:e2e` covers 36 Playwright tests in 9 files (`e2e/`); none of them covers `/brief`. They were not run for this README, so there is no current pass count. One of them, `e2e/apply-admin.spec.ts`, picks the location on the Google map, so it needs a Maps key.
 - **Not yet implemented:** continuous integration (the repo has no CI pipeline), a measured test-coverage report, and performance benchmarks.
 
 ---
