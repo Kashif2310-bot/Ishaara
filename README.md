@@ -74,7 +74,7 @@ This repository's history splits at **22 September 2026**. The dates below are c
 - **Scan reliability:** Nominatim rate-limit compliance, telling rate limits, timeouts and missing places apart, and a 3-hour result cache.
 - **Ishaara voice assistant and Jobs (30 Sep):** a full-screen voice advisor that fills in the application form as the citizen talks, and a Jobs page for direct hiring (sample data).
 - **Maps and the jobs map (1 Oct):** optional Google Maps location picking and Google Places competition analysis, falling back automatically to the keyless OpenStreetMap flow when no key is set; and a map of job openings on `/jobs`.
-- **Tests:** about 500 new tests, roughly 760 → 1,259 declared tests (about 1.66×).
+- **Tests:** roughly 760 → **1,359 declared tests** (about 1.79×), counted from a real run on 2026-10-27: 1,330 passed, 29 skipped, 0 failed.
 
 *Note:* this repository's commit history also includes contributions from the wider original LokPulse team, acknowledged under [Contributors](#contributors) below.
 
@@ -95,7 +95,7 @@ Rural enterprise failure is rarely just "no loan". More often it is **the wrong 
 |---|---|---|
 | **Hyperlocal scan** (`/scan`) | Profile + location → live weather (Open-Meteo), live geocoding (Nominatim) and live competitor density (Overpass, or Google Places when a Maps key is set) for any Indian place; seeded mandi and festival signals for 5 curated Karnataka villages | Live APIs; seeded data where noted |
 | **Competition analysis** (optional, Google Maps; `src/maps/`) | With `VITE_GOOGLE_MAPS_API_KEY` set: map-based location picking and Google Places competitor data on `/apply` and live-place scans. Without a key: falls back automatically to the original OpenStreetMap flow — the village dropdown, "Other / not listed", and Overpass lookups — with no functionality lost | Optional; needs your own Maps key (not provided). The keyless fallback was verified against the pre-Maps code on 2026-10-01 |
-| **Kalaburagi daily business brief** (`/brief`; `src/brief/`) | Any business anywhere in Kalaburagi district → a call for tomorrow (push / normal / protect), ranked actions, a 7-day outlook and a ledger of about 200 measurements, each with its unit, source and method. Reads tomorrow's hourly forecast, 10 years of local climate, air quality, river flow, elevation, the OpenStreetMap features around the spot, Kalaburagi's own calendar (Urs of Khwaja Bande Nawaz, Sharanabasaveshwar jatra, Islamic dates as observed in India, Karnataka holidays) and a **news pulse** of the city's channels (Gulbarga Ki Awaaz, gohash, Gulbarga News, Gulbarga Headlines, Gulbarga 24 News, Kalaburagi 24/7): outlier posts against each channel's usual reach, announced events and notices, rivals' adverts, topics and places in the news. Failed sources are shown as unavailable, never filled in. Farm and livestock notes defer product and dose choices to the KVK or vet | Live in the browser, no keys for weather and maps. The pulse needs the `local_pulse` migration and the `local-pulse` Edge Function deployed (YouTube is keyless; Instagram needs an `APIFY_TOKEN`). English only. Tested on synthetic fixtures plus a real 22 Oct 2026 snapshot of the channels; the live services were not reachable from the build machine, so the first real run should be checked by hand |
+| **Kalaburagi daily business brief** (`/brief`; `src/brief/`) | Any business anywhere in Kalaburagi district → a call for tomorrow (push / normal / protect), ranked actions, a 7-day outlook and a ledger of about 200 measurements, each with its unit, source and method. Reads tomorrow's hourly forecast, 10 years of local climate, air quality, river flow, elevation, the OpenStreetMap features around the spot, Kalaburagi's own calendar (Urs of Khwaja Bande Nawaz, Sharanabasaveshwar jatra, Islamic dates as observed in India, Karnataka holidays) and a **news pulse** of the city's channels (Gulbarga Ki Awaaz, gohash, Gulbarga News, Gulbarga Headlines, Gulbarga 24 News, Kalaburagi 24/7): outlier posts against each channel's usual reach, announced events and notices, rivals' adverts, topics and places in the news. Failed sources are shown as unavailable, never filled in. Farm and livestock notes defer product and dose choices to the KVK or vet | Live in the browser, no keys for weather and maps. The pulse needs the `local_pulse` migration and the `local-pulse` Edge Function deployed (YouTube is keyless; Instagram needs an `APIFY_TOKEN`). English only. Tested on synthetic fixtures plus a real 22 Oct 2026 snapshot of the channels. In a live run on 2026-10-27 the forecast, climate, air-quality, river and elevation services answered; Overpass was rate limited and the pulse tables are not set up, so the snapshot was used (details below) |
 | **LokScore** | 0–100 score: demand 25%, competition gap 20%, weather fit 15%, financial coverage 25%, eligibility 15% (`src/lib/config.ts`) | Live, local computation |
 | **NSFDC finance engine** | Exact scheme rules (table below), reducing-balance quarterly annuity EMI in integer paise | Live, locked by `src/lib/finance.test.ts` |
 | **Adaptive sanction quorum** (`/sanction`) | LokScore ≥ 80 → 2-of-3 signers; ≥ 60 → 3-of-5; below 60 → 4-of-5 plus a mentor. Every signature is real secp256k1 ECDSA (`ethers`) | Real cryptography; stored in the browser only |
@@ -180,7 +180,7 @@ Captured from the running app on 2026-10-01 (`docs/screenshots/`). The scan scre
 
 The full architecture — diagram, both citizen flows, persistence paths, external services and the assistant's pipeline and trust model — is in [`docs/TECHNICAL_DESIGN.md`](docs/TECHNICAL_DESIGN.md). A summary follows.
 
-**Stack.** Frontend: React 19, TypeScript, Vite 8, Tailwind CSS 4, React Router 7, i18next, Leaflet, Recharts, ethers 6. Backend: FastAPI with SQLAlchemy and Alembic, on SQLite by default. Supabase: Postgres with row-level security, anonymous auth, and two Edge Functions.
+**Stack.** Frontend: React 19, TypeScript, Vite 8, Tailwind CSS 4, React Router 7, i18next, Leaflet, Recharts, ethers 6. Backend: FastAPI with SQLAlchemy and Alembic, on SQLite by default. Supabase: Postgres with row-level security, anonymous auth, and three Edge Functions.
 
 ```mermaid
 flowchart TB
@@ -197,7 +197,7 @@ flowchart TB
 
   fastapi[("FastAPI + SQLAlchemy · SQLite")]
   supabase[("Supabase Postgres + RLS · anonymous auth")]
-  fns["Supabase Edge Functions: gemini-live-token, live-scheme-retrieval"]
+  fns["Supabase Edge Functions: gemini-live-token, live-scheme-retrieval, local-pulse"]
   gemini["Gemini Live"]
   datagov["data.gov.in · not configured"]
   geo["Open-Meteo · Nominatim · Overpass · Google Maps (optional)"]
