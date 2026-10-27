@@ -40,3 +40,8 @@ file_size_limit = "25MiB"
 # Kashif owns live-scheme-retrieval — do not duplicate.
 [functions.live-scheme-retrieval]
 verify_jwt = false
+
+# Kalaburagi pulse collector. Called only by the scheduler with the x-pulse-secret header
+# (see the function's header comment); it refuses every other caller.
+[functions.local-pulse]
+verify_jwt = false

@@ -179,6 +179,48 @@ export function LandingPage() {
         </motion.div>
       </section>
 
+      {/* Kalaburagi Daily Business Brief: the decision engine for local businesses. */}
+      <motion.section
+        initial={{ opacity: 0, y: 18 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-zinc-950 via-black to-emerald-950 p-6 text-white shadow-2xl shadow-black/30 sm:p-10"
+      >
+        <div aria-hidden className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full border border-emerald-400/20" />
+        <div aria-hidden className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full border border-emerald-400/30" />
+        <div className="relative grid items-center gap-8 lg:grid-cols-[1.4fr_1fr]">
+          <div>
+            <p className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-300">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" /> {kn ? 'ಕಲಬುರಗಿ · ಹೊಸದು' : 'New · Kalaburagi district'}
+            </p>
+            <h2 className="mt-3 font-display text-3xl font-bold leading-tight sm:text-5xl">
+              {kn ? 'ನಾಳೆ ವ್ಯಾಪಾರ ಹೇಗೆ? ಒಂದು ಉತ್ತರ.' : 'Should I push tomorrow? One answer.'}
+            </h2>
+            <p className="mt-4 max-w-xl text-sm leading-relaxed text-white/70 sm:text-base">
+              {kn
+                ? 'ಹವಾಮಾನ, ಹತ್ತು ವರ್ಷಗಳ ಹವಾಮಾನ ದಾಖಲೆ, ಗಾಳಿ, ನದಿ, ನಕ್ಷೆ, ಕಲಬುರಗಿ ಹಬ್ಬ-ಉರುಸ್ ಕ್ಯಾಲೆಂಡರ್ ಮತ್ತು ಸ್ಥಳೀಯ ಸುದ್ದಿ ಚಾನಲ್‌ಗಳಿಂದ 200+ ಅಂಕಿಅಂಶಗಳು — ಪ್ರತಿ ಅಂಗಡಿ, ಹೊಲ, ಹೈನುಗಾರಿಕೆಗೆ.'
+                : '200+ live measurements from weather, ten years of climate, air, rivers, the street map, Kalaburagi’s festival and Urs calendar and the city’s own news channels, turned into push, normal or protect, with the three moves to make.'}
+            </p>
+            <Link to="/brief" className="group mt-6 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-black transition hover:scale-[1.02]">
+              {kn ? 'ನಾಳೆಯ ವರದಿ ನೋಡಿ' : 'Open the Daily Brief'} <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              ['9', kn ? 'ಲೈವ್ ಮೂಲಗಳು' : 'live sources'],
+              ['200+', kn ? 'ಅಳತೆಗಳು' : 'measurements'],
+              ['6', kn ? 'ಸುದ್ದಿ ಚಾನಲ್‌ಗಳು' : 'news channels'],
+              ['21', kn ? 'ವ್ಯಾಪಾರ ಪ್ರಕಾರಗಳು' : 'business types'],
+            ].map(([n, l]) => (
+              <div key={l} className="rounded-2xl border border-white/10 bg-white/[0.05] p-4">
+                <p className="font-display text-3xl font-bold">{n}</p>
+                <p className="text-xs uppercase tracking-wider text-white/55">{l}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </motion.section>
+
       <section>
         <h2 className="font-display text-2xl font-bold text-forest sm:text-3xl">{t('pain.title')}</h2>
         <div className="mt-6 grid gap-4 md:grid-cols-3">
